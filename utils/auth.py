@@ -31,9 +31,18 @@ def init_firebase():
             k: firebase_cfg[k] for k in service_account_keys if k in firebase_cfg
         }
 
+        if "private_key" in service_account_info:
+            service_account_info["private_key"] = (
+                str(service_account_info["private_key"]).replace("\\n", "\n")
+            )
+
+        db_url = firebase_cfg.get("databaseURL")
+        if not db_url and "project_id" in firebase_cfg:
+            db_url = f"https://{firebase_cfg['project_id']}-default-rtdb.firebaseio.com"
+
         cred = credentials.Certificate(service_account_info)
         firebase_admin.initialize_app(cred, {
-            "databaseURL": firebase_cfg["databaseURL"]
+            "databaseURL": db_url
         })
 
 init_firebase()
@@ -139,6 +148,16 @@ def get_balanced_condition() -> int:
         return 1  # Default to condition 1
 
 
+def get_user_data(user_id: str) -> dict:
+    """Fetch user record from Firebase Realtime Database."""
+    try:
+        ref = db.reference(f'users/{user_id}')
+        return ref.get() or {}
+    except Exception as e:
+        st.error(f"Error fetching user data: {e}")
+        return {}
+
+
 # ---------------------------------------------------------
 # Session Helpers
 # ---------------------------------------------------------
@@ -157,56 +176,3 @@ def logout_user():
     """Clear session state."""
     for key in list(st.session_state.keys()):
         del st.session_state[key]
-
-
-def require_auth():
-    """Simple guard for protected pages."""
-    if not st.session_state.get("logged_in"):
-        st.error("You must log in to access this page.")
-        st.stop()
-
-
-# ---------------------------------------------------------
-# User Data via Admin SDK
-# ---------------------------------------------------------
-
-def get_user_data(uid: str):
-    """
-    Fetch user info from Firebase Realtime Database.
-    """
-    try:
-        ref = db.reference(f'users/{uid}')
-        user_data = ref.get()
-        
-        if user_data:
-            return user_data
-        else:
-            # User doesn't exist in database yet, create basic record
-            auth_user = admin_auth.get_user(uid)
-            email = auth_user.email
-            
-            # Assign condition
-            if email in MANUAL_CONDITION_ASSIGNMENTS:
-                condition = MANUAL_CONDITION_ASSIGNMENTS[email]
-            else:
-                condition = get_balanced_condition()
-            
-            new_user_data = {
-                'email': email,
-                'condition': condition,
-                'condition_name': CONDITIONS[condition],
-                'assigned_date': time.time(),
-                'sessions': {
-                    'arraylist': {'status': 'not_started'},
-                    'recursion': {'status': 'not_started'}
-                }
-            }
-            
-            ref.set(new_user_data)
-            return new_user_data
-            
-    except Exception as e:
-        st.error(f"Error fetching user data: {e}")
-        return None
-
-

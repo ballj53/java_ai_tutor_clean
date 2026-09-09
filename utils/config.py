@@ -108,5 +108,5 @@ STUDY_INFO = {
     'description': 'Help us understand how different teaching methods affect learning!',
     'institution': 'College of Charleston',
     'estimated_time': '~18 minutes per session (3 sessions total)',
-    'contact': 'williamsa17@g.cofc.edu'
+    'contact': 'balljc1@g.cofc.edu'
 }

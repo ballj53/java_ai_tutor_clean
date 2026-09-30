@@ -203,9 +203,8 @@ def create_users_from_dataframe(df, default_password="Cougars2026"):
 def get_condition_name(condition):
     """Get readable condition name"""
     conditions = {
-        1: "character_scaffolded",
-        2: "non_character_scaffolded",
-        3: "direct_chat"
+        1: "control_scaffolded",
+        2: "adaptive_scaffolded"
     }
     return conditions.get(condition, "unknown")
 

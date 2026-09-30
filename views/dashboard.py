@@ -22,8 +22,6 @@ import tutor_flow.flow_manager
 # Lazy import to avoid circular dependency
 # from tutor_flow.handlers import generate_initial_message
 
-from characters import get_all_character_names, get_character
-
 
 def render_dashboard():
     """Render the main dashboard showing session progress."""
@@ -106,37 +104,8 @@ def render_dashboard():
         logout_user()
         st.rerun()
 
-
-def render_character_selection():
-    """Render character selection (Condition 1 only)."""
-    from tutor_flow.handlers import generate_initial_message
-
-    st.title("Choose Your Tutor")
-
-    topic = get_research_topic(st.session_state.current_session_id)
-    st.write(f"Select a character to help you learn about {topic.name}")
-
-    characters = get_all_character_names()
-    cols = st.columns(3)
-
-    for i, char_name in enumerate(characters[:6]):  # Show first 6
-        character = get_character(char_name)
-
-        with cols[i % 3]:
-            st.subheader(char_name)
-            st.write(f"*{character.personality}*")
-
-            if st.button(f"Choose {char_name}", key=f"char_{char_name}"):
-                st.session_state.selected_character = char_name
-                st.session_state.phase = "learning"
-                st.session_state.start_time = time.time()
-                st.session_state.session_active = True
-                generate_initial_message(topic, 1)
-                st.rerun()
-
-
 def start_session(session_id: str):
-    """Initialize a learning session."""
+    """Initialize a learning session (all users use tutor flow)."""
     from tutor_flow.handlers import generate_initial_message
 
     topic = get_research_topic(session_id)
@@ -149,42 +118,11 @@ def start_session(session_id: str):
     # Save session start to database
     save_session_start(st.session_state.user_id, session_id, condition)
 
-    # Initialize based on condition
-    if condition in [1, 2]:  # Scaffolded
-        st.session_state.flow = tutor_flow.flow_manager.TutorFlow(
-            topic.name, "Tutor"
-        )
-
-        if condition == 1:
-            st.session_state.phase = "character_selection"
-        else:
-            st.session_state.phase = "learning"
-            st.session_state.start_time = time.time()
-            st.session_state.session_active = True
-            generate_initial_message(topic, condition)
-
-    else:
-        # Condition 3: direct chat
-        st.session_state.phase = "learning"
-        st.session_state.start_time = time.time()
-        st.session_state.session_active = True
-        st.session_state.messages = []
-
-        welcome = (
-            f"Hello! I'm here to answer your questions about {topic.name}. "
-            "What would you like to know?"
-        )
-        st.session_state.messages.append(
-            {
-                "role": "assistant",
-                "content": welcome,
-                "timestamp": time.time(),
-            }
-        )
-
-        save_message(
-            st.session_state.user_id,
-            session_id,
-            "assistant",
-            welcome,
-        )
+    # Initialize tutor flow for all conditions
+    st.session_state.flow = tutor_flow.flow_manager.TutorFlow(
+        topic.key
+    )
+    st.session_state.phase = "learning"
+    st.session_state.start_time = time.time()
+    st.session_state.session_active = True
+    generate_initial_message(topic, condition)

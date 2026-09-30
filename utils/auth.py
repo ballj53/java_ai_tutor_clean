@@ -127,14 +127,14 @@ def assign_condition_if_needed(user_id: str, email: str):
 
 def get_balanced_condition() -> int:
     """
-    Assign condition based on balanced distribution.
+    Assign condition based on balanced distribution (2 conditions only for regular vs. adaptive study).
     Returns the condition with fewest users.
     """
     try:
         ref = db.reference('users')
         all_users = ref.get() or {}
         
-        condition_counts = {1: 0, 2: 0, 3: 0}
+        condition_counts = {1: 0, 2: 0}
         for user_data in all_users.values():
             condition = user_data.get('condition', 0)
             if condition in condition_counts:

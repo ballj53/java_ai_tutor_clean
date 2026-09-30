@@ -146,6 +146,77 @@ def get_session_status(user_id: str, session_id: str) -> str:
         return 'not_started'
 
 
+def assign_adaptive_scaffold_tier(user_id: str, session_id: str, results: List[Dict]) -> Optional[str]:
+    """
+    Assigns adaptive scaffold tier based on the total difficulty points
+    achieved in the Lesson 1 quiz:
+    High Scaffold (Extra Support):
+    Regular Scaffold (Standard 7-Step Support):
+    Low Scaffold (Minimal Support):
+    """
+
+    # Only return a tier if the current session is Session 1
+    if session_id != 'arraylist' or not results:
+        return None
+
+    try:
+        ref_user = db.reference(f'users/{user_id}')
+        user_data = ref_user.get() or {}
+
+        condition = user_data.get('condition', 1)
+
+        # All users in the control group/condition 1 get regular scaffolding, regardless of score
+        if condition == 1:
+            tier = 'regular'
+            ref_user.update({'scaffold_tier': tier})
+            return tier
+
+        # Calculate a weighted percentage score based on question difficulty
+        total_possible = sum(r.get('difficulty', 1) for r in results)
+        earned_points = sum(r.get('difficulty', 1) for r in results if r.get('is_correct'))
+        weighted_pct = round((earned_points / total_possible * 100), 1) if total_possible > 0 else 0
+
+        # Assign adaptive scaffold tiers based on weighted percentage
+        if weighted_pct <= 45.0:
+            tier = 'high'
+        elif weighted_pct <= 75.0:
+            tier = 'regular'
+        else:
+            tier = 'low'
+
+        # Save the calculated tier information to the database
+        ref_user.update({
+            'scaffold_tier': tier,
+            'binning_weighted_score': earned_points,
+            'binning_weighted_total': total_possible,
+            'binning_weighted_percentage': weighted_pct,
+            'binning_timestamp': time.time(),
+            'binning_source': session_id
+        })
+
+        print(f"[BINNING] Condition 2 User {user_id} binned into tier {tier}: {earned_points}/{total_possible} pts, {weighted_pct}%")
+        return tier
+
+    except Exception as e:
+        st.error(f"Error assigning adaptive scaffold tier: {e}")
+        return None
+
+
+def get_user_scaffold_tier(user_id: str, session_id: Optional[str]) -> str:
+    if session_id == 'arraylist':
+        return 'regular'
+
+    try:
+        ref = db.reference(f'users/{user_id}')
+        user_data = ref.get() or {}
+        if user_data.get('condition') == 2:
+            return user_data.get('scaffold_tier', 'regular')
+        return 'regular'
+    except Exception as e:
+        st.error(f"Error getting user scaffold tier: {e}")
+        return 'regular'
+
+
 def get_next_session(user_id: str) -> Optional[str]:
     """
     Determine which session the user should do next.
@@ -296,6 +367,9 @@ def save_quiz_responses(user_id: str, session_id: str, responses: Dict,
                     'is_correct': result.get('is_correct', False),
                     'user_answer': result.get('user_answer', ''),
                 })
+
+            if results and session_id == 'arraylist':
+                assign_adaptive_scaffold_tier(user_id, session_id, results)
 
         ref.update(quiz_data)
 

@@ -20,9 +20,8 @@ PARTICIPANTS_PER_CONDITION = 20
 
 # Conditions
 CONDITIONS = {
-    1: "character_scaffolded",      # Treatment 1: Character + Scaffolding
-    2: "non_character_scaffolded",  # Treatment 2: No Character + Scaffolding
-    3: "direct_chat"                # Control: No Character, No Scaffolding
+    1: "control_scaffolded",      # Fixed 7-step scaffolding
+    2: "adaptive_scaffolded",  # Adaptive scaffold based on Session 1 performance
 }
 
 # Manual condition assignments (override random assignment)
@@ -69,7 +68,7 @@ SESSIONS = {
 COLLECT_DATA = {
     'messages': True,           # All conversation messages
     'timestamps': True,         # Timestamp every interaction
-    'scaffold_progress': True,  # Step progression (conditions 1 & 2)
+    'scaffold_progress': True,  # Step progression
     'quiz_responses': True,     # Quiz answers
     'survey_responses': True,   # Survey answers
     'session_duration': True,   # Time spent
@@ -82,6 +81,7 @@ EXPORT_INCLUDE = [
     'user_id',
     'email',
     'condition',
+    'scaffold_tier',
     'topic',
     'session_start',
     'session_end',
@@ -108,5 +108,5 @@ STUDY_INFO = {
     'description': 'Help us understand how different teaching methods affect learning!',
     'institution': 'College of Charleston',
     'estimated_time': '~18 minutes per session (3 sessions total)',
-    'contact': 'williamsa17@g.cofc.edu'
+    'contact': 'balljc1@g.cofc.edu'
 }

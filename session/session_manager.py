@@ -29,17 +29,13 @@ def start_session(session_id: str):
     # CONDITION 1 & 2 — SCAFFOLDED
     # ---------------------------------------------------------
     if condition in [1, 2]:
-        st.session_state.flow = TutorFlow(topic.name, "Tutor")
+        st.session_state.flow = TutorFlow(topic.key)
 
-        if condition == 1:
-            # Character selection first
-            st.session_state.phase = "character_selection"
-        else:
-            # Direct scaffolded learning
-            st.session_state.phase = "learning"
-            st.session_state.start_time = time.time()
-            st.session_state.session_active = True
-            generate_initial_message(topic, condition)
+        # Direct scaffolded learning
+        st.session_state.phase = "learning"
+        st.session_state.start_time = time.time()
+        st.session_state.session_active = True
+        generate_initial_message(topic, condition)
 
     # ---------------------------------------------------------
     # CONDITION 3 — DIRECT CHAT

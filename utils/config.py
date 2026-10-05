@@ -20,8 +20,8 @@ PARTICIPANTS_PER_CONDITION = 20
 
 # Conditions
 CONDITIONS = {
-    1: "control_scaffolded",      # Fixed 7-step scaffolding
-    2: "adaptive_scaffolded",  # Adaptive scaffold based on Session 1 performance
+    1: "adaptive_first",      # First adaptive scaffold group
+    2: "adaptive_second"  # Second adaptive scaffold group
 }
 
 # Manual condition assignments (override random assignment)

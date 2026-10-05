@@ -203,8 +203,8 @@ def create_users_from_dataframe(df, default_password="Cougars2026"):
 def get_condition_name(condition):
     """Get readable condition name"""
     conditions = {
-        1: "control_scaffolded",
-        2: "adaptive_scaffolded"
+        1: "adaptive_first",
+        2: "adaptive_second"
     }
     return conditions.get(condition, "unknown")
 

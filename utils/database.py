@@ -148,28 +148,19 @@ def get_session_status(user_id: str, session_id: str) -> str:
 
 def assign_adaptive_scaffold_tier(user_id: str, session_id: str, results: List[Dict]) -> Optional[str]:
     """
-    Assigns adaptive scaffold tier based on the total difficulty points
-    achieved in the Lesson 1 quiz:
-    High Scaffold (Extra Support):
-    Regular Scaffold (Standard 7-Step Support):
-    Low Scaffold (Minimal Support):
+    Assigns adaptive scaffold tier based on the percentage
+    of total difficulty points achieved in the Lesson 1 quiz:
+    High Scaffold (Extra Support): <= 45%
+    Regular Scaffold (Standard 7-Step Support): <= 75%
+    Low Scaffold (Minimal Support): > 75%
     """
 
-    # Only return a tier if the current session is Session 1
-    if session_id != 'arraylist' or not results:
-        return None
-
     try:
+        # Fetch user data
         ref_user = db.reference(f'users/{user_id}')
         user_data = ref_user.get() or {}
 
         condition = user_data.get('condition', 1)
-
-        # All users in the control group/condition 1 get regular scaffolding, regardless of score
-        if condition == 1:
-            tier = 'regular'
-            ref_user.update({'scaffold_tier': tier})
-            return tier
 
         # Calculate a weighted percentage score based on question difficulty
         total_possible = sum(r.get('difficulty', 1) for r in results)
@@ -194,7 +185,7 @@ def assign_adaptive_scaffold_tier(user_id: str, session_id: str, results: List[D
             'binning_source': session_id
         })
 
-        print(f"[BINNING] Condition 2 User {user_id} binned into tier {tier}: {earned_points}/{total_possible} pts, {weighted_pct}%")
+        print(f"[BINNING] User {user_id} binned into tier {tier}: {earned_points}/{total_possible} pts, {weighted_pct}%")
         return tier
 
     except Exception as e:
@@ -205,13 +196,10 @@ def assign_adaptive_scaffold_tier(user_id: str, session_id: str, results: List[D
 def get_user_scaffold_tier(user_id: str, session_id: Optional[str]) -> str:
     if session_id == 'arraylist':
         return 'regular'
-
     try:
         ref = db.reference(f'users/{user_id}')
         user_data = ref.get() or {}
-        if user_data.get('condition') == 2:
-            return user_data.get('scaffold_tier', 'regular')
-        return 'regular'
+        return user_data.get('scaffold_tier', 'regular')
     except Exception as e:
         st.error(f"Error getting user scaffold tier: {e}")
         return 'regular'

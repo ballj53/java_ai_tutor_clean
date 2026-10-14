@@ -146,13 +146,11 @@ def get_session_status(user_id: str, session_id: str) -> str:
         return 'not_started'
 
 
-def assign_adaptive_scaffold_tier(user_id: str, session_id: str, results: List[Dict]) -> Optional[str]:
+def assign_adaptive_scaffold_tier(user_id: str, session_id: str, score: int) -> Optional[str]:
     """
-    Assigns adaptive scaffold tier based on the percentage
-    of total difficulty points achieved in the Lesson 1 quiz:
-    High Scaffold (Extra Support): <= 45%
-    Regular Scaffold (Standard 7-Step Support): <= 75%
-    Low Scaffold (Minimal Support): > 75%
+    Assigns adaptive scaffold tier based on the raw score from the ArrayList quiz:
+    High Scaffold (Extra Support): < 4 points (< 80%)
+    Regular Scaffold (Standard 7-Step Support): >= 4 points (80%+)
     """
 
     try:
@@ -162,30 +160,21 @@ def assign_adaptive_scaffold_tier(user_id: str, session_id: str, results: List[D
 
         condition = user_data.get('condition', 1)
 
-        # Calculate a weighted percentage score based on question difficulty
-        total_possible = sum(r.get('difficulty', 1) for r in results)
-        earned_points = sum(r.get('difficulty', 1) for r in results if r.get('is_correct'))
-        weighted_pct = round((earned_points / total_possible * 100), 1) if total_possible > 0 else 0
-
         # Assign adaptive scaffold tiers based on weighted percentage
-        if weighted_pct <= 45.0:
+        if score < 4:
             tier = 'high'
-        elif weighted_pct <= 75.0:
-            tier = 'regular'
         else:
-            tier = 'low'
+            tier = 'regular'
 
         # Save the calculated tier information to the database
         ref_user.update({
             'scaffold_tier': tier,
-            'binning_weighted_score': earned_points,
-            'binning_weighted_total': total_possible,
-            'binning_weighted_percentage': weighted_pct,
+            'binning_quiz_score': score,
             'binning_timestamp': time.time(),
             'binning_source': session_id
         })
 
-        print(f"[BINNING] User {user_id} binned into tier {tier}: {earned_points}/{total_possible} pts, {weighted_pct}%")
+        print(f"[BINNING] User {user_id} binned into tier {tier}: {score} pts")
         return tier
 
     except Exception as e:
@@ -356,8 +345,8 @@ def save_quiz_responses(user_id: str, session_id: str, responses: Dict,
                     'user_answer': result.get('user_answer', ''),
                 })
 
-            if results and session_id == 'arraylist':
-                assign_adaptive_scaffold_tier(user_id, session_id, results)
+            if session_id == 'arraylist':
+                assign_adaptive_scaffold_tier(user_id, session_id, score)
 
         ref.update(quiz_data)
 

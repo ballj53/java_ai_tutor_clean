@@ -20,67 +20,67 @@ class QuizQuestion:
 # ArrayList Quiz Questions
 ARRAYLIST_QUIZ = [
     QuizQuestion(
-        question="What is the main advantage of ArrayList over a regular array?",
+        question="A student is confused because they learned that arrays in Java have a strictly fixed size, but an ArrayList seems to be able to accept an infinite number of items. Conceptually, how is this possible?",
         options=[
-            "ArrayList is faster for all operations",
-            "ArrayList can change size dynamically",
-            "ArrayList uses less memory",
-            "ArrayList can only store integers"
+            "ArrayLists use dynamic memory allocation instead of underlying arrays.",
+            "The ArrayList secretly tracks a fixed-size internal array, and whenever it gets full, it builds a larger one and copies everything over.",
+            "The ArrayList compresses the items so they always fit.",
+            "The operating system increases the physical memory of the original array."
         ],
         correct_index=1,
-        explanation="ArrayList can grow and shrink automatically, while arrays have a fixed size.",
+        explanation="ArrayLists use regular arrays internally and build new ones when they get full.",
         difficulty=1  # Easy - basic concept
     ),
 
     QuizQuestion(
-        question="What happens when an ArrayList runs out of capacity?",
+        question="You are using an ArrayList in your code and you call `list.add('New Data')`. The underlying array happens to be full. As the programmer writing this code, do you need to take any extra steps to ensure the data is added successfully?",
         options=[
-            "It throws an error",
-            "It stops accepting new elements",
-            "It creates a larger internal array and copies elements",
-            "It compresses existing elements"
+            "Yes, you must manually write a `for` loop to copy the old data into a new array before calling `add()`.",
+            "Yes, you must manually call a `list.resize()` method before calling `add()`.",
+            "No, you don't have to write anything extra; the ArrayList is an abstraction that handles the creation of the new array and the copying automatically behind the scenes.",
+            "Yes, you must specify the new capacity of the array inside the `add()` method, such as `add(20, 'New Data')`."
         ],
         correct_index=2,
-        explanation="ArrayList automatically creates a larger array (usually ~1.5x size) and copies all elements to it.",
+        explanation="No extra steps are needed. The ArrayList automatically creates a larger array (usually ~1.5x size) and copies all elements to it behind-the-scenes.",
         difficulty=2  # Medium - requires understanding of mechanism
     ),
 
     QuizQuestion(
-        question="Which operation is O(1) for ArrayList?",
+        question="The AI tutor highlighted that the copy loop during a resize is an `O(n)` operation. If your ArrayList currently has 1,000 elements and needs to resize, what does `O(n)` physically mean for the computer's processor in this scenario?",
         options=[
-            "Adding an element at the beginning",
-            "Removing an element from the middle",
-            "Getting an element by index",
-            "Finding an element by value"
+            "The processor executes the copy action 1 time, grabbing all 1,000 elements in one chunk.",
+            "The processor executes the copy action 1,000 individual times, moving each element one by one.",
+            "The processor executes the copy action 1,000 squared (1,000,000) times.",
+            "The processor skips the copy action and just renames the original array."
         ],
-        correct_index=2,
-        explanation="Getting an element by index is O(1) because ArrayList uses an array internally with direct index access.",
+        correct_index=1,
+        explanation="Because the resizing operation is O(n), the number of copies required increases linearly as the number of elements does.",
         difficulty=3  # Medium-hard - requires Big-O knowledge
     ),
 
     QuizQuestion(
-        question="What is the initial capacity of a default ArrayList?",
+        question="An ArrayList currently has a 'capacity' of 8, and a 'size' of 7. You run a loop that adds 2 more items. Exactly what happens under the hood?",
         options=[
-            "0",
-            "1",
-            "10",
-            "100"
+            "The first item is added instantly. For the second item, the ArrayList creates a larger array, copies the 8 items over, and adds the final item.",
+            "The ArrayList crashes on the second item because it exceeds the capacity of 8.",
+            "Both items are added instantly, and the capacity silently increases to 9.",
+            "The ArrayList creates a larger array immediately before adding the first item, just to be safe."
         ],
-        correct_index=2,
-        explanation="By default, ArrayList starts with a capacity of 10 elements.",
+        correct_index=0,
+        explanation="Because 1 slot remains in the underlying array (capacity - size = 1), it has room for the first item and does not need to be resized to add it. However, more room is needed when the system tries to add the second item.",
         difficulty=2  # Medium - specific detail
     ),
 
     QuizQuestion(
-        question="When designing a new Java system component, when would you prefer to use an ArrayList over a traditional array?",
+        question="You are writing a program that needs to load exactly 1,000,000 customer records from a database into a brand-new, default ArrayList. Because you didn't define a starting capacity, what is the major performance consequence?",
         options=[
-            "When implementing direct memory mapping with fixed buffer sizes for low-level hardware interfacing.",
-            "When designing high-performance math computations that require storing primitive data types without the overhead of autoboxing.",
-            "When handling business logic for flexibility with an unknown or dynamically changing size (such as managing items in a user's e-commerce shopping cart) and needing built-in functionality like sorting or filtering.",
-            "When storing a fixed number of elements whose maximum size is known at compile time and will not change, such as the 12 months of the year or 7 days of the week."
+            "The program will crash because a default ArrayList permanently caps its size at 10.",
+            "The program will run slowly because the ArrayList will be forced to repeatedly pause, create a new larger internal array, and copy all elements over, dozens of times.",
+            "There is no performance consequence because ArrayLists do not use arrays under the hood.",
+            "The ArrayList will automatically detect the database size and reserve 1,000,000 slots the very first time `add()` is called."
         ],
-        correct_index=2,
-        explanation="ArrayList is more flexible and efficient than a traditional array.",
+        correct_index=1,
+        explanation="Because the default starting capacity for an ArrayList is 10 elements, it will need to frequently resize as elements are added to be able to store them all, requiring elements to be copied. To avoid this bottleneck, it's best to initialize it with an estimated capacity.",
         difficulty=4
     )
 ]

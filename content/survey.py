@@ -72,12 +72,6 @@ SURVEY_QUESTIONS = {
         'text': 'Would you use this tool again for other CS topics?',
         'type': 'yes_no',
         'options': ['Yes', 'No', 'Maybe']
-    },
-
-    'topic_question': {
-        'text': 'Please write one question you still have about {topic}',
-        'type': 'text',
-        'placeholder': 'Please write your question here...'
     }
 }
 

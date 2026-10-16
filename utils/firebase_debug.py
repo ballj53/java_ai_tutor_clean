@@ -174,7 +174,7 @@ def test_data_saving():
             ref.set({
                 'email': test_email,
                 'condition': 1,
-                'condition_name': 'character_scaffolded',
+                'condition_name': 'control_scaffolded',
                 'test': True,
                 'created_at': datetime.now().isoformat(),
                 'sessions': {

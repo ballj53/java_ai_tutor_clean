@@ -146,6 +146,54 @@ def get_session_status(user_id: str, session_id: str) -> str:
         return 'not_started'
 
 
+def assign_adaptive_scaffold_tier(user_id: str, session_id: str, score: int) -> Optional[str]:
+    """
+    Assigns adaptive scaffold tier based on the raw score from the ArrayList quiz:
+    High Scaffold (Extra Support): < 4 points (< 80%)
+    Regular Scaffold (Standard 7-Step Support): >= 4 points (80%+)
+    """
+
+    try:
+        # Fetch user data
+        ref_user = db.reference(f'users/{user_id}')
+        user_data = ref_user.get() or {}
+
+        condition = user_data.get('condition', 1)
+
+        # Assign adaptive scaffold tiers based on weighted percentage
+        if score < 4:
+            tier = 'high'
+        else:
+            tier = 'regular'
+
+        # Save the calculated tier information to the database
+        ref_user.update({
+            'scaffold_tier': tier,
+            'binning_quiz_score': score,
+            'binning_timestamp': time.time(),
+            'binning_source': session_id
+        })
+
+        print(f"[BINNING] User {user_id} binned into tier {tier}: {score} pts")
+        return tier
+
+    except Exception as e:
+        st.error(f"Error assigning adaptive scaffold tier: {e}")
+        return None
+
+
+def get_user_scaffold_tier(user_id: str, session_id: Optional[str]) -> str:
+    if session_id == 'arraylist':
+        return 'regular'
+    try:
+        ref = db.reference(f'users/{user_id}')
+        user_data = ref.get() or {}
+        return user_data.get('scaffold_tier', 'regular')
+    except Exception as e:
+        st.error(f"Error getting user scaffold tier: {e}")
+        return 'regular'
+
+
 def get_next_session(user_id: str) -> Optional[str]:
     """
     Determine which session the user should do next.
@@ -296,6 +344,9 @@ def save_quiz_responses(user_id: str, session_id: str, responses: Dict,
                     'is_correct': result.get('is_correct', False),
                     'user_answer': result.get('user_answer', ''),
                 })
+
+            if session_id == 'arraylist':
+                assign_adaptive_scaffold_tier(user_id, session_id, score)
 
         ref.update(quiz_data)
 

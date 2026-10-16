@@ -14,11 +14,11 @@ def render_complete():
     next_session = get_next_session(st.session_state.user_id)
 
     if next_session:
-        st.write("You have one more session to complete later in the semester.")
+        st.write("You have at least one more session to complete later in the semester.")
         st.write("We'll let you know when it's time!")
     else:
         st.balloons()
-        st.write("You've completed both sessions!")
+        st.write("You've completed all sessions!")
         st.write("Thank you for participating in our research!")
 
     # Back to dashboard button

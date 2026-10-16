@@ -9,20 +9,19 @@ QUIZ_TIME_ESTIMATE = 10 * 60  # ~5 minutes for quiz (no hard limit)
 SURVEY_TIME_ESTIMATE = 5 * 60  # ~3 minutes for survey
 
 # Session Available Dates
-SESSION_1_START = '2026-01-22'
-SESSION_2_START = '2026-01-29'
-SESSION_3_START = '2026-04-13'
+SESSION_1_START = '2026-10-21'
+SESSION_2_START = '2026-10-28'
+SESSION_3_START = '2026-11-04'
 
 
 # Study Configuration
-TOTAL_PARTICIPANTS = 60
-PARTICIPANTS_PER_CONDITION = 20
+TOTAL_PARTICIPANTS = 27
+PARTICIPANTS_PER_CONDITION = 13
 
 # Conditions
 CONDITIONS = {
-    1: "character_scaffolded",      # Treatment 1: Character + Scaffolding
-    2: "non_character_scaffolded",  # Treatment 2: No Character + Scaffolding
-    3: "direct_chat"                # Control: No Character, No Scaffolding
+    1: "no_adaptive_scaffold", # Adaptive scaffold control group
+    2: "adaptive_scaffold"     # Adaptive scaffold study group
 }
 
 # Manual condition assignments (override random assignment)
@@ -69,7 +68,7 @@ SESSIONS = {
 COLLECT_DATA = {
     'messages': True,           # All conversation messages
     'timestamps': True,         # Timestamp every interaction
-    'scaffold_progress': True,  # Step progression (conditions 1 & 2)
+    'scaffold_progress': True,  # Step progression
     'quiz_responses': True,     # Quiz answers
     'survey_responses': True,   # Survey answers
     'session_duration': True,   # Time spent
@@ -82,6 +81,7 @@ EXPORT_INCLUDE = [
     'user_id',
     'email',
     'condition',
+    'scaffold_tier',
     'topic',
     'session_start',
     'session_end',

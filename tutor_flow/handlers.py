@@ -14,20 +14,15 @@ def generate_initial_message(topic, condition):
     Generate the initial learning message for scaffolded conditions.
     Called automatically when session starts.
     """
-    from characters import get_character
     from tutor_flow.step_guide import StepGuide
 
     session_id = st.session_state.current_session_id
 
     # Build system prompt
-    if condition == 1:
-        character = get_character(st.session_state.selected_character)
-        system_prompt = character.get_system_prompt(topic.name)
-    else:
-        system_prompt = (
-            f"You are a friendly, encouraging CS tutor teaching {topic.name}.\n"
-            "Be conversational, warm, and clear. Keep responses focused and under 150 words."
-        )
+    system_prompt = (
+        f"You are a friendly, encouraging CS tutor teaching {topic.name}.\n"
+        "Be conversational, warm, and clear. Keep responses focused and under 150 words."
+    )
 
     # Get the metaphor prompt
     metaphor_prompt = StepGuide.get_metaphor_prompt(topic)
@@ -65,7 +60,6 @@ def handle_user_message_scaffolded(user_input: str):
     Handle user message for scaffolded conditions (1 & 2).
     Simple flow: record message → check advancement → generate response.
     """
-    from characters import get_character
     from tutor_flow.step_guide import StepGuide
     from tutor_flow.steps import ScaffoldStep
     from content.research_topics import get_research_topic
@@ -190,7 +184,6 @@ def _show_visual_diagram(flow, topic, session_id):
 
 def _generate_response(flow, topic, condition, session_id, user_input):
     """Generate an AI response for the current step."""
-    from characters import get_character
     from tutor_flow.step_guide import StepGuide
 
     # Get the response prompt (includes context and instructions)
@@ -204,15 +197,11 @@ def _generate_response(flow, topic, condition, session_id, user_input):
     print(f"PROMPT:\n{response_prompt[:200]}...")
 
     # Build system prompt
-    if condition == 1:
-        character = get_character(st.session_state.selected_character)
-        system_prompt = character.get_system_prompt(topic.name)
-    else:
-        system_prompt = (
-            f"You are a helpful, encouraging CS tutor teaching {topic.name}.\n"
-            "Be conversational and clear. Validate student answers explicitly.\n"
-            "Keep responses focused and under 150 words."
-        )
+    system_prompt = (
+        f"You are a helpful, encouraging CS tutor teaching {topic.name}.\n"
+        "Be conversational and clear. Validate student answers explicitly.\n"
+        "Keep responses focused and under 150 words."
+    )
 
     # Build conversation history
     conversation_history = [

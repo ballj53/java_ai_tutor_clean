@@ -17,9 +17,8 @@ class TutorFlow:
     Simple state machine - AI handles the nuance within each step.
     """
 
-    def __init__(self, topic_key: str, character_name: str) -> None:
+    def __init__(self, topic_key: str) -> None:
         self.topic_key: str = topic_key
-        self.character_name: str = character_name
         self.current_step: ScaffoldStep = ScaffoldStep.INITIAL_METAPHOR
         self.messages: List[ConversationMessage] = []
         self.step_message_count: int = 0

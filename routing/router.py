@@ -6,7 +6,7 @@ from routing.guards import login_required
 
 # Views
 from views.login import render_login_page
-from views.dashboard import render_dashboard, render_character_selection
+from views.dashboard import render_dashboard
 from views.learning import render_learning_session
 from views.quiz import render_quiz
 from views.survey import render_survey_page
@@ -45,9 +45,6 @@ def route():
 
     if phase == "dashboard":
         return render_dashboard()
-
-    if phase == "character_selection":
-        return render_character_selection()
 
     if phase == "learning":
         return render_learning_session()

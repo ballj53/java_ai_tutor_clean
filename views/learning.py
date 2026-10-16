@@ -57,6 +57,7 @@ def render_learning_session():
     # -------------------------
     # Progress Indicator (Scaffolded Conditions Only)
     # -------------------------
+    '''
     if condition in [1, 2] and hasattr(st.session_state, 'flow'):
         from tutor_flow.steps import ScaffoldStep
 
@@ -85,6 +86,7 @@ def render_learning_session():
             st.caption("💡 We'll guide you through 7 steps to help you understand this topic deeply.")
 
     st.write("---")
+    '''
 
     # -------------------------
     # Time up → move to quiz

@@ -163,12 +163,12 @@ class StepGuide:
             )
 
         if current_step == ScaffoldStep.PRACTICE:
-            has_tutor_asked = any(
-                m.role == "assistant" and (m.step == ScaffoldStep.PRACTICE or getattr(m.step, "value", m.step) == ScaffoldStep.PRACTICE.value)
-                for m in (context_messages or [])
+            tutor_practice_count = sum(
+                1 for m in (context_messages or [])
+                if m.role == "assistant" and (m.step == ScaffoldStep.PRACTICE or getattr(m.step, "value", m.step) == ScaffoldStep.PRACTICE.value)
             )
 
-            if not has_tutor_asked:
+            if tutor_practice_count == 0:
                 return (
                     f"TOPIC: {topic.name}\n\n"
                     f"Student said: \"{user_input}\"\n\n"
@@ -189,8 +189,27 @@ class StepGuide:
 
             # Tutor already gave the practice problem. Student is responding.
             cleaned_input = re.sub(r'^(smart_toy|face)\s*', '', user_input.strip(), flags=re.IGNORECASE).strip()
+            word_count = len(cleaned_input.split())
+            is_question = is_student_question(cleaned_input) and not any(cleaned_input.lower().strip().endswith(tag) for tag in ["right?", "correct?", "yeah?", "yes?"])
+            is_adv_req = is_advance_request(cleaned_input)
+            is_bare_aff = is_bare_affirmative(cleaned_input)
+            has_help = has_help_signal(cleaned_input)
 
-            if is_advance_request(cleaned_input) or is_bare_affirmative(cleaned_input):
+            # Friendly reveal if the student has had 4+ exchanges and is still struggling, asking questions, confused, or trying to skip
+            if tutor_practice_count >= 4 and (is_adv_req or is_question or is_bare_aff or has_help or word_count < 4):
+                return (
+                    f"TOPIC: {topic.name}\n\n"
+                    f"Student said: \"{cleaned_input}\"\n\n"
+                    f"TOPIC GUIDANCE SOLUTION & QUESTION:\n{topic_guidance}\n\n"
+                    "THE STUDENT HAS STRUGGLED WITH THE PRACTICE PROBLEM ACROSS MULTIPLE TURNS.\n\n"
+                    "INSTRUCTIONS:\n"
+                    "1. Acknowledge what they said warmly.\n"
+                    "2. Kindly reveal and explain the solution in 1-2 clear, encouraging sentences using the TOPIC GUIDANCE above.\n"
+                    "3. End by asking: 'Does that make sense? Ready to summarize what you learned?'\n\n"
+                    "Keep under 70 words."
+                )
+
+            if is_adv_req or is_bare_aff:
                 return (
                     f"TOPIC: {topic.name}\n\n"
                     f"Student said: \"{cleaned_input}\"\n\n"
@@ -206,7 +225,7 @@ class StepGuide:
                 )
 
             # The student asked a clarifying question without attempting the answer yet
-            if is_student_question(cleaned_input) and not any(cleaned_input.lower().strip().endswith(tag) for tag in ["right?", "correct?", "yeah?", "yes?"]):
+            if is_question:
                 return (
                     f"TOPIC: {topic.name}\n\n"
                     f"Student asked a clarifying question: \"{cleaned_input}\"\n\n"

@@ -14,6 +14,9 @@ def generate_initial_message(topic, condition):
     Generate the initial learning message for scaffolded conditions.
     Called automatically when session starts.
     """
+    import importlib
+    import tutor_flow.step_guide
+    importlib.reload(tutor_flow.step_guide)
     from tutor_flow.step_guide import StepGuide
 
     session_id = st.session_state.current_session_id
@@ -60,6 +63,9 @@ def handle_user_message_scaffolded(user_input: str):
     Handle user message for scaffolded conditions (1 & 2).
     Simple flow: record message → check advancement → generate response.
     """
+    import importlib
+    import tutor_flow.step_guide
+    importlib.reload(tutor_flow.step_guide)
     from tutor_flow.step_guide import StepGuide
     from tutor_flow.steps import ScaffoldStep
     from content.research_topics import get_research_topic
@@ -184,6 +190,9 @@ def _show_visual_diagram(flow, topic, session_id):
 
 def _generate_response(flow, topic, condition, session_id, user_input):
     """Generate an AI response for the current step."""
+    import importlib
+    import tutor_flow.step_guide
+    importlib.reload(tutor_flow.step_guide)
     from tutor_flow.step_guide import StepGuide
 
     # Get the response prompt (includes context and instructions)

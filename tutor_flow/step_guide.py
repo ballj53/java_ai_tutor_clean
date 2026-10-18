@@ -1,11 +1,20 @@
-# tutor_flow/step_guide.py
 """
 Generates prompts for each scaffold step.
 SIMPLIFIED: Give AI clear context and goals, trust it to execute well.
 """
 
+from __future__ import annotations
+import re
 from typing import List, Optional
-from .steps import ScaffoldStep, ConversationMessage
+from .steps import (
+    ScaffoldStep,
+    ConversationMessage,
+    is_student_question,
+    has_help_signal,
+    has_ready_signal,
+    is_advance_request,
+    is_bare_affirmative,
+)
 
 
 class StepGuide:
@@ -30,10 +39,11 @@ class StepGuide:
 
     @staticmethod
     def get_response_prompt(
-            topic,
-            current_step: ScaffoldStep,
-            user_input: str,
-            context_messages: List[ConversationMessage],
+        topic,
+        current_step: ScaffoldStep,
+        user_input: str,
+        context_messages: Optional[List[ConversationMessage]] = None,
+        condition: int = 1,
     ) -> str:
         """
         Generate a prompt based on current step and conversation context.
@@ -44,15 +54,12 @@ class StepGuide:
         - Transition smoothly to the next topic when appropriate
         """
 
-        # Get topic-specific guidance
-        step_key = current_step.value
-        topic_guidance = topic.instructions.get(step_key, "")
-        if topic_guidance:
-            topic_guidance = topic_guidance.replace("{metaphor_prompt}", topic.metaphor_prompt)
-            topic_guidance = topic_guidance.replace("{agent_crisis}", topic.agent_crisis)
-            topic_guidance = topic_guidance.replace("{agent_solution}", topic.agent_solution)
-            topic_guidance = topic_guidance.replace("{topic_name}", topic.name)
-            topic_guidance = topic_guidance.replace("{code_focus}", topic.code_focus)
+        # Get topic-specific guidance if available
+        topic_guidance = ""
+        if hasattr(topic, "instructions_for"):
+            topic_guidance = topic.instructions_for(current_step.value)
+        elif hasattr(topic, "get_step_guidance"):
+            topic_guidance = topic.get_step_guidance(current_step.value)
 
         # Build context from recent messages
         recent_context = ""
@@ -60,7 +67,19 @@ class StepGuide:
             recent_context = "RECENT CONVERSATION:\n"
             for msg in context_messages[-3:]:
                 role = "Student" if msg.role == "user" else "You"
-                recent_context += f"{role}: {msg.content[:100]}...\n"
+                recent_context += f"{role}: {msg.content[:250]}...\n"
+
+        # Check whether code or usage examples have already been shown
+        has_shown_code = any(
+            m.role == "assistant"
+            and (m.step == ScaffoldStep.CODE_STRUCTURE or getattr(m.step, "value", m.step) == ScaffoldStep.CODE_STRUCTURE.value)
+            for m in (context_messages or [])
+        )
+        has_shown_usage = any(
+            m.role == "assistant"
+            and (m.step == ScaffoldStep.CODE_USAGE or getattr(m.step, "value", m.step) == ScaffoldStep.CODE_USAGE.value)
+            for m in (context_messages or [])
+        )
 
         # ============================================================
         # STEP-SPECIFIC PROMPTS
@@ -97,9 +116,9 @@ class StepGuide:
                 f"Student said: \"{user_input}\"\n\n"
                 f"TOPIC GUIDANCE:\n{topic_guidance}\n\n"
                 "YOUR RESPONSE:\n"
-                "- If they're confused: Explain the diagram more clearly\n"
-                "- If they understand: Acknowledge and transition to code\n"
-                "- Say: 'Now let's look at the actual code...'\n\n"
+                "- If they answered what part was helpful or understand: Acknowledge warmly and transition to code by saying: 'Now let's look at the actual code...'\n"
+                "- DO NOT repeat the question 'What part of this diagram is most helpful?' if they already answered it.\n"
+                "- If they asked a question or seem confused: Answer their question clearly in 1-2 sentences.\n\n"
                 "Keep under 75 words."
             )
 
@@ -110,13 +129,17 @@ class StepGuide:
                 f"{recent_context}\n"
                 f"TOPIC GUIDANCE:\n{topic_guidance}\n\n"
                 f"CODE FOCUS: {topic.code_focus}\n\n"
-                "YOUR TASK (based on conversation state):\n"
-                "- If you haven't shown code yet: Show the INTERNAL implementation code, "
-                "highlight the key parts, and ask a question about it.\n"
-                "- If student answered your question: Validate their answer (RIGHT/WRONG), "
-                "explain briefly, then ask 'Ready to see how to use this?'\n"
-                "- If student is confused: Clarify without repeating everything.\n\n"
-                "Keep under 150 words."
+                "YOUR TASK:\n"
+                + (
+                    "- Show the INTERNAL implementation code, highlight the key parts, and ask the question from TOPIC GUIDANCE.\n"
+                    if not has_shown_code else
+                    "- DO NOT show or repeat the implementation code again (it has already been shown).\n"
+                    "- DO NOT repeat the question verbatim.\n"
+                    "- If student answered or attempted your question: Validate their answer (RIGHT/WRONG), explain briefly, then ask 'Ready to see how to use this?'\n"
+                    "- If student just asks to advance or says ready without answering: Remind them warmly: 'Before we move on, give the question a shot! [Prompt question briefly in 1 sentence]. What do you think?'\n"
+                    "- If student asked a question or is confused: Answer their question directly and warmly in 1-2 sentences, then encourage them to answer.\n"
+                )
+                + "Keep under 150 words."
             )
 
         if current_step == ScaffoldStep.CODE_USAGE:
@@ -125,57 +148,114 @@ class StepGuide:
                 f"Student said: \"{user_input}\"\n\n"
                 f"{recent_context}\n"
                 f"TOPIC GUIDANCE:\n{topic_guidance}\n\n"
-                "YOUR TASK (based on conversation state):\n"
-                "- If you haven't shown usage code: Show simple USAGE examples, "
-                "explain how it works from the user's perspective, ask a question.\n"
-                "- If student answered your question: Validate their answer, "
-                "then ask 'Ready to practice with a scenario?'\n"
-                "- If student says ready: Confirm and prepare to move on.\n\n"
-                "Keep under 120 words."
+                "YOUR TASK:\n"
+                + (
+                    "- Show simple USAGE examples, explain how it works from the user's perspective, and ask the question from TOPIC GUIDANCE.\n"
+                    if not has_shown_usage else
+                    "- DO NOT show or repeat the usage code again (it has already been shown).\n"
+                    "- DO NOT repeat the question verbatim.\n"
+                    "- If student answered your question: Validate their answer, then ask 'Ready to practice with a scenario?'\n"
+                    "- If student just asks to advance or says ready without answering: Remind them warmly: 'Before we jump into practice, give the question a shot! [Prompt question briefly in 1 sentence]. What do you think?'\n"
+                    "- If student asked a question or is confused: Answer their question directly and warmly in 1-2 sentences, then encourage them to answer.\n"
+                    "- If student says ready to practice (after you asked them): Confirm and prepare to move on.\n"
+                )
+                + "Keep under 120 words."
             )
 
         if current_step == ScaffoldStep.PRACTICE:
-            # Check if student just said a short affirmative vs gave a real answer
-            is_just_affirmative = len(user_input.split()) <= 2
+            has_tutor_asked = any(
+                m.role == "assistant" and (m.step == ScaffoldStep.PRACTICE or getattr(m.step, "value", m.step) == ScaffoldStep.PRACTICE.value)
+                for m in (context_messages or [])
+            )
 
-            if is_just_affirmative:
-                return (
-                        f"TOPIC: {topic.name}\n\n"
-                        "STUDENT JUST SAID: \"" + user_input + "\" (this is just an affirmative, NOT an answer)\n\n"
-                                                               "YOU MUST NOW GIVE A PRACTICE PROBLEM.\n\n"
-                                                               "Use the topic guidance below to create the practice problem.\n\n"
-                                                               f"TOPIC GUIDANCE:\n{topic_guidance}\n\n"
-                                                               "DO NOT praise them for a summary they didn't give.\n"
-                                                               "DO NOT say 'Great job!' - they haven't done anything yet.\n"
-                                                               "JUST GIVE THE PRACTICE PROBLEM.\n"
-                                                               "Keep under 75 words."
-                )
-            else:
+            if not has_tutor_asked:
                 return (
                     f"TOPIC: {topic.name}\n\n"
-                    f"Student answered your practice problem: \"{user_input}\"\n\n"
-                    "VALIDATE THEIR ANSWER:\n"
-                    "1. Say 'Correct!' or 'Not quite...'\n"
-                    "2. Briefly explain (2 sentences max)\n"
-                    "3. Say: 'Ready to summarize what you learned?'\n\n"
-                    "Keep under 75 words."
+                    f"Student said: \"{user_input}\"\n\n"
+                    "YOU MUST NOW INTRODUCE AND PRESENT THE PRACTICE PROBLEM.\n\n"
+                    f"TOPIC GUIDANCE:\n{topic_guidance}\n\n"
+                    "MANDATORY FORMAT:\n"
+                    "1. Start by briefly acknowledging or validating what the student said, followed by an encouraging transition that explicitly introduces the practice problem "
+                    "(e.g., \"Spot on! Now let's put this into practice with a quick scenario:\" or "
+                    "\"Great job! You've got the hang of this. Here is a practice problem to test your understanding:\").\n"
+                    "2. Present the practice question from TOPIC GUIDANCE above.\n\n"
+                    "CRITICAL RULES:\n"
+                    "- NEVER output the question alone. You MUST include the introductory transition first.\n"
+                    "- DO NOT praise them for a summary.\n"
+                    "- DO NOT say 'Ready to summarize' yet.\n"
+                    "- DO NOT invent a complicated coding implementation task.\n"
+                    "- Keep under 80 words."
                 )
 
+            # Tutor already gave the practice problem. Student is responding.
+            cleaned_input = re.sub(r'^(smart_toy|face)\s*', '', user_input.strip(), flags=re.IGNORECASE).strip()
+
+            if is_advance_request(cleaned_input) or is_bare_affirmative(cleaned_input):
+                return (
+                    f"TOPIC: {topic.name}\n\n"
+                    f"Student said: \"{cleaned_input}\"\n\n"
+                    f"TOPIC GUIDANCE QUESTION:\n{topic_guidance}\n\n"
+                    "THE STUDENT JUST ASKED TO ADVANCE OR SAID READY, BUT HAS NOT ATTEMPTED THE PRACTICE PROBLEM YET.\n\n"
+                    "INSTRUCTIONS:\n"
+                    "1. DO NOT validate them as correct.\n"
+                    "2. DO NOT give away the answer yet.\n"
+                    "3. DO NOT say 'Ready to summarize' yet.\n"
+                    "4. Warmly encourage them to try the practice problem: "
+                    "'Before we move to the summary, give the practice problem a shot! [Prompt question from TOPIC GUIDANCE briefly in 1 sentence]. What do you think?'\n\n"
+                    "Keep under 60 words."
+                )
+
+            # The student asked a clarifying question without attempting the answer yet
+            if is_student_question(cleaned_input) and not any(cleaned_input.lower().strip().endswith(tag) for tag in ["right?", "correct?", "yeah?", "yes?"]):
+                return (
+                    f"TOPIC: {topic.name}\n\n"
+                    f"Student asked a clarifying question: \"{cleaned_input}\"\n\n"
+                    f"TOPIC GUIDANCE QUESTION:\n{topic_guidance}\n\n"
+                    "INSTRUCTIONS:\n"
+                    "1. Answer their clarifying question directly and warmly in 1-2 sentences.\n"
+                    "2. Encourage them to try answering the practice question: 'What do you think happens in this scenario?'\n"
+                    "3. DO NOT give away the answer yet.\n"
+                    "4. DO NOT say 'Ready to summarize' yet.\n\n"
+                    "Keep under 65 words."
+                )
+
+            # The student attempted/answered the practice problem
+            return (
+                f"TOPIC: {topic.name}\n\n"
+                f"Student answered your practice question: \"{cleaned_input}\"\n\n"
+                "VALIDATE THEIR ANSWER:\n"
+                "1. Say 'Spot on!' or 'Exactly!' (or gently clarify if mistaken).\n"
+                "2. Briefly explain why in 1-2 sentences.\n"
+                "3. Say: 'Ready to summarize what you learned?'\n\n"
+                "DO NOT ask any more practice questions or scenarios.\n"
+                "Keep under 75 words."
+            )
+
         if current_step == ScaffoldStep.REFLECTION:
-            # Check if student just said a short affirmative vs gave a real summary
             word_count = len(user_input.split())
             is_just_affirmative = word_count <= 3
+            is_asking_question = is_student_question(user_input) and not any(
+                user_input.lower().strip().endswith(tag) for tag in ["right?", "correct?", "yeah?", "yes?"]
+            )
 
-            if is_just_affirmative:
+            if is_asking_question:
                 return (
-                        f"TOPIC: {topic.name}\n\n"
-                        "STUDENT JUST SAID: \"" + user_input + "\" (this is just an affirmative, NOT a summary)\n\n"
-                                                               "YOU MUST NOW ASK FOR THEIR SUMMARY.\n\n"
-                                                               "Say exactly: 'In your own words, what did you learn about " + topic.name + " today?'\n\n"
-                                                                                                                                           "DO NOT say 'Great summary!' - they haven't given one yet.\n"
-                                                                                                                                           "DO NOT move to quiz yet.\n"
-                                                                                                                                           "JUST ASK THE QUESTION.\n"
-                                                                                                                                           "Keep under 50 words."
+                    f"TOPIC: {topic.name}\n\n"
+                    f"Student asked a question: \"{user_input}\"\n\n"
+                    "Answer their question clearly in 1-2 sentences, then ask them:\n"
+                    f"'In your own words, what did you learn about {topic.name} today?'\n\n"
+                    "Keep under 60 words."
+                )
+            elif is_just_affirmative:
+                return (
+                    f"TOPIC: {topic.name}\n\n"
+                    f"STUDENT JUST SAID: \"{user_input}\" (this is just an affirmative, NOT a summary)\n\n"
+                    "YOU MUST NOW ASK FOR THEIR SUMMARY.\n\n"
+                    f"Say: 'In your own words, what did you learn about {topic.name} today?'\n\n"
+                    "DO NOT say 'Great summary!' - they haven't given one yet.\n"
+                    "DO NOT move to quiz yet.\n"
+                    "JUST ASK THE QUESTION.\n"
+                    "Keep under 50 words."
                 )
             else:
                 return (
@@ -198,3 +278,6 @@ class StepGuide:
             f"Student said: \"{user_input}\"\n\n"
             "Respond helpfully and keep the lesson moving forward."
         )
+
+    # Alias for compatibility
+    get_prompt = get_response_prompt

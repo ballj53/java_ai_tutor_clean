@@ -189,7 +189,7 @@ class TutorFlow:
         # AI gives problem → student answers → AI validates (asks ready to summarize?) → student responds
         # ============================================================
         if self.current_step == ScaffoldStep.PRACTICE:
-            # Hard cap: after 5 AI messages in practice, advance so student never gets trapped
+            # Hard cap: after 5 AI messages in practice, advance so student never gets trapped (protects 15-min study limit)
             if self.step_message_count >= 5:
                 return True
 

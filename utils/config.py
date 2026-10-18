@@ -81,6 +81,7 @@ EXPORT_INCLUDE = [
     'user_id',
     'email',
     'condition',
+    'section',
     'scaffold_tier',
     'topic',
     'session_start',

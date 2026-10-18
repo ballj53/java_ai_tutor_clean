@@ -50,7 +50,7 @@ def generate_detailed_csv_with_messages() -> str:
     output = io.StringIO()
     
     fieldnames = [
-        'user_id', 'email', 'condition', 'condition_name', 
+        'user_id', 'email', 'condition', 'condition_name', 'section',
         'topic', 'message_number', 'role', 'content', 
         'timestamp', 'step'
     ]
@@ -62,6 +62,7 @@ def generate_detailed_csv_with_messages() -> str:
         email = user_data.get('email', '')
         condition = user_data.get('condition', 0)
         condition_name = user_data.get('condition_name', '')
+        section = user_data.get('section', '')
         
         sessions = user_data.get('sessions', {})
         
@@ -74,6 +75,7 @@ def generate_detailed_csv_with_messages() -> str:
                     'email': email,
                     'condition': condition,
                     'condition_name': condition_name,
+                    'section': section,
                     'topic': topic,
                     'message_number': i + 1,
                     'role': msg.get('role', ''),

@@ -50,6 +50,7 @@ def view_user_data(user_id: str = None):
                 st.write("**Email:**", user_data.get('email', 'N/A'))
                 st.write("**Condition:**", user_data.get('condition', 'N/A'))
                 st.write("**Condition Name:**", user_data.get('condition_name', 'N/A'))
+                st.write("**Section:**", user_data.get('section', 'N/A'))
 
                 # Show sessions
                 st.write("---")
@@ -103,6 +104,7 @@ def view_all_users_summary():
                 'User ID': user_id[:8] + '...',  # Shortened for display
                 'Email': email,
                 'Condition': condition,
+                'Section': user_data.get('section', 'N/A'),
                 'ArrayList': arraylist_status,
                 'Recursion': recursion_status
             })

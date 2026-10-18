@@ -2,12 +2,12 @@
 Create a Single Test User for Java AI Tutor
 
 Usage:
-    python scripts/create_test_user.py [email] [password] [condition]
+    python scripts/create_test_user.py [email] [password] [condition] [section]
 
 Examples:
     python scripts/create_test_user.py
     python scripts/create_test_user.py test@cofc.edu Password123! 1
-    python scripts/create_test_user.py student2@cofc.edu MyPass456! 2
+    python scripts/create_test_user.py student2@cofc.edu MyPass456! 2 1
 """
 
 import sys
@@ -22,7 +22,7 @@ import utils.auth  # Initializes Firebase Admin SDK
 from utils.config import CONDITIONS
 
 
-def create_or_update_user(email: str, password: str, condition: int = 1):
+def create_or_update_user(email: str, password: str, condition: int = 1, section: int = None):
     condition = int(condition)
     condition_name = CONDITIONS.get(condition, f"condition_{condition}")
 
@@ -52,20 +52,30 @@ def create_or_update_user(email: str, password: str, condition: int = 1):
             'queue': {'status': 'not_started'}
         }
     }
+    if section is not None:
+        user_data['section'] = int(section)
     user_ref.set(user_data)
 
     print(f"✅ Realtime Database initialized at /users/{user.uid}")
     print(f"   - Condition: {condition} ({condition_name})")
+    if section is not None:
+        print(f"   - Section:   {section}")
     print(f"   - Sessions: arraylist, recursion, queue ('not_started')")
     print("\n🎉 Test user is ready to log in:")
     print(f"   Email:     {email}")
     print(f"   Password:  {password}")
-    print(f"   Condition: {condition} ({condition_name})\n")
+    print(f"   Condition: {condition} ({condition_name})")
+    if section is not None:
+        print(f"   Section:   {section}\n")
+    else:
+        print()
 
 
 if __name__ == "__main__":
     email = sys.argv[1] if len(sys.argv) > 1 else "test@cofc.edu"
     password = sys.argv[2] if len(sys.argv) > 2 else "Password123!"
     condition = int(sys.argv[3]) if len(sys.argv) > 3 else 1
+    section = int(sys.argv[4]) if len(sys.argv) > 4 else None
 
-    create_or_update_user(email, password, condition)
+    create_or_update_user(email, password, condition, section)
+

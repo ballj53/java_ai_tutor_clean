@@ -9,11 +9,12 @@ Creates Firebase user accounts from a spreadsheet and automatically assigns cond
 
 **CSV Format:**
 ```csv
-email,condition
-student1@cofc.edu,1
-student2@cofc.edu,2
-student3@cofc.edu,3
+email,condition,section
+student1@cofc.edu,1,1
+student2@cofc.edu,2,1
+student3@cofc.edu,1,2
 ```
+*(Note: `section` column is optional. You can also pass section via CLI or let it auto-detect from filenames like `section2_cleaned.csv`)*
 
 **Excel Format:**
 Same columns, any sheet name.
@@ -28,6 +29,16 @@ Edit `create_firebase_users.py` line 47:
 ### 3. Run the Script
 
 ```bash
+# Bulk creation from CSV:
+python create_firebase_users.py section2_cleaned.csv
+
+# Bulk creation with explicit section:
+python create_firebase_users.py students.csv 2
+
+# Single user creation:
+python create_firebase_users.py student@cofc.edu 1 2
+
+# View current user counts by condition and section:
 python create_firebase_users.py
 ```
 
@@ -47,17 +58,17 @@ Save as `.streamlit/secrets.toml` or separate JSON file.
 
 ### Option 1: CSV File
 ```python
-results = create_users_from_csv('students.csv', default_password='JavaStudy2025')
+results = create_users_from_csv('section2_cleaned.csv', default_password='JavaStudy2025')
 ```
 
 ### Option 2: Excel File
 ```python
-results = create_users_from_excel('students.xlsx', default_password='JavaStudy2025')
+results = create_users_from_excel('students.xlsx', default_password='JavaStudy2025', section=2)
 ```
 
 ### Option 3: Custom Password
 ```python
-results = create_users_from_csv('students.csv', default_password='YourPassword123')
+results = create_users_from_csv('students.csv', default_password='YourPassword123', section=1)
 ```
 
 ## What Happens
@@ -67,17 +78,18 @@ For each row:
 2. ✅ Sets password to `JavaStudy2025` (or custom)
 3. ✅ Adds to Realtime Database with:
    - Email
-   - Condition (1, 2, or 3)
-   - Session status (both not_started)
+   - Condition (1 or 2)
+   - Section (e.g. 1, 2, or 3)
+   - Session status (arraylist, recursion, queue all not_started)
    - Assigned date
 
 ## Output
 
 ### Console Output
 ```
-✅ Created: student1@cofc.edu → Condition 1 (UID: abc123)
-✅ Created: student2@cofc.edu → Condition 2 (UID: def456)
-⚠️  Already exists: student3@cofc.edu - Updating condition to 3
+✅ Created: student1@cofc.edu → Condition 1, Section 1 (UID: abc123)
+✅ Created: student2@cofc.edu → Condition 2, Section 1 (UID: def456)
+⚠️  Already exists: student3@cofc.edu - Updating condition to 1, Section 2
 
 ===========================================================
 SUMMARY
@@ -89,11 +101,11 @@ SUMMARY
 ```
 
 ### Credentials File
-Creates `created_users.csv`:
+Creates `user_credentials.csv`:
 ```csv
-email,uid,condition,password
-student1@cofc.edu,abc123,1,JavaStudy2025
-student2@cofc.edu,def456,2,JavaStudy2025
+email,uid,condition,password,section
+student1@cofc.edu,abc123,1,JavaStudy2025,1
+student2@cofc.edu,def456,2,JavaStudy2025,1
 ```
 
 ## Give to Students

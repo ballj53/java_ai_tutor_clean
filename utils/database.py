@@ -254,6 +254,22 @@ def get_user_condition(user_id: str) -> int:
         return 1
 
 
+def get_user_section(user_id: str) -> Optional[int]:
+    """Get the section assigned to a user."""
+    try:
+        ref = db.reference(f'users/{user_id}')
+        user_data = ref.get()
+
+        if user_data and 'section' in user_data:
+            return user_data['section']
+
+        return None
+
+    except Exception as e:
+        st.error(f"Error getting user section: {e}")
+        return None
+
+
 def export_data_to_dict() -> List[Dict]:
     """
     Export all data for analysis.
@@ -268,6 +284,7 @@ def export_data_to_dict() -> List[Dict]:
             email = user_data.get('email', '')
             condition = user_data.get('condition', 0)
             condition_name = user_data.get('condition_name', '')
+            section = user_data.get('section', '')
 
             sessions = user_data.get('sessions', {})
 
@@ -280,6 +297,7 @@ def export_data_to_dict() -> List[Dict]:
                         'email': email,
                         'condition': condition,
                         'condition_name': condition_name,
+                        'section': section,
                         'topic': session_id,
                         'session_start': session_data.get('start_time', ''),
                         'session_end': session_data.get('end_time', ''),
@@ -560,6 +578,7 @@ def export_difficulty_data_csv(topic: str, output_file: str = None):
         for user_id, user_data in all_users.items():
             email = user_data.get('email', '')
             condition = user_data.get('condition', 0)
+            section = user_data.get('section', '')
 
             session_data = user_data.get('sessions', {}).get(topic, {})
             question_details = session_data.get('question_details', [])
@@ -569,6 +588,7 @@ def export_difficulty_data_csv(topic: str, output_file: str = None):
                     'user_id': user_id,
                     'email': email,
                     'condition': condition,
+                    'section': section,
                     'question_number': q.get('question_number', 0),
                     'difficulty': q.get('difficulty', 0),
                     'is_correct': q.get('is_correct', False),

@@ -3,11 +3,11 @@ Bulk Firebase User Creation Script
 Creates users from CSV/Excel file with email, password, and condition assignment
 """
 import os
-
+import re
+import sys
 import pandas as pd
 import firebase_admin
 from firebase_admin import credentials, auth, db
-import sys
 
 # Initialize Firebase Admin SDK
 def init_firebase():
@@ -38,102 +38,60 @@ def init_firebase():
     })
 
 
-def create_users_from_csv(csv_file, default_password="Cougars2026"):
+def extract_section_from_row(row, default_section=None):
+    """Extract section from DataFrame row or return default_section"""
+    for col in ['section', 'Section', 'section_number', 'Section_Number', 'section_num']:
+        if col in row and pd.notna(row[col]):
+            try:
+                return int(row[col])
+            except (ValueError, TypeError):
+                return row[col]
+    return default_section
+
+
+def infer_section_from_filename(filename):
+    """Try to infer section number from filename (e.g. section2_cleaned.csv -> 2)"""
+    if isinstance(filename, str):
+        match = re.search(r'section[_\s-]*(\d+)', filename, re.IGNORECASE)
+        if match:
+            return int(match.group(1))
+    return None
+
+
+def create_users_from_csv(csv_file, default_password="Cougars2026", section=None):
     """
     Create Firebase users from CSV file.
     
     CSV format:
-    email,condition
-    student1@cofc.edu,1
-    student2@cofc.edu,2
-    student3@cofc.edu,3
+    email,condition[,section]
+    student1@cofc.edu,1,2
+    student2@cofc.edu,2,2
+    student3@cofc.edu,3,2
     """
-    
     # Read CSV
     df = pd.read_csv(csv_file)
-    
-    results = {
-        'created': [],
-        'failed': [],
-        'already_exist': []
-    }
-    
-    for index, row in df.iterrows():
-        email = row['email'].strip()
-        condition = int(row['condition'])
-        
-        try:
-            # Create user in Firebase Auth
-            user = auth.create_user(
-                email=email,
-                password=default_password,
-                email_verified=False
-            )
-            
-            print(f"✅ Created user: {email} (UID: {user.uid})")
-            
-            # Add user to Realtime Database with condition
-            user_ref = db.reference(f'users/{user.uid}')
-            user_ref.set({
-                'email': email,
-                'condition': condition,
-                'condition_name': get_condition_name(condition),
-                'assigned_date': pd.Timestamp.now().isoformat(),
-                'sessions': {
-                    'arraylist': {'status': 'not_started'},
-                    'recursion': {'status': 'not_started'}
-                }
-            })
-            
-            results['created'].append({
-                'email': email,
-                'uid': user.uid,
-                'condition': condition,
-                'password': default_password
-            })
-            
-        except auth.EmailAlreadyExistsError:
-            print(f"⚠️  User already exists: {email}")
-            # Update their condition anyway
-            try:
-                existing_user = auth.get_user_by_email(email)
-                user_ref = db.reference(f'users/{existing_user.uid}')
-                user_ref.update({
-                    'condition': condition,
-                    'condition_name': get_condition_name(condition)
-                })
-                results['already_exist'].append(email)
-            except Exception as e:
-                print(f"❌ Error updating existing user {email}: {e}")
-                results['failed'].append({'email': email, 'error': str(e)})
-                
-        except Exception as e:
-            print(f"❌ Error creating user {email}: {e}")
-            results['failed'].append({'email': email, 'error': str(e)})
-    
-    return results
+    default_section = section if section is not None else infer_section_from_filename(csv_file)
+    return create_users_from_dataframe(df, default_password=default_password, default_section=default_section)
 
 
-def create_users_from_excel(excel_file, sheet_name=0, default_password="JavaStudy2025"):
+def create_users_from_excel(excel_file, sheet_name=0, default_password="JavaStudy2025", section=None):
     """
     Create Firebase users from Excel file.
     
     Excel format (Sheet 1):
-    | email              | condition |
-    |--------------------|-----------|
-    | student1@cofc.edu  | 1         |
-    | student2@cofc.edu  | 2         |
-    | student3@cofc.edu  | 3         |
+    | email              | condition | section |
+    |--------------------|-----------|---------|
+    | student1@cofc.edu  | 1         | 2       |
+    | student2@cofc.edu  | 2         | 2       |
+    | student3@cofc.edu  | 3         | 2       |
     """
-    
     # Read Excel
     df = pd.read_excel(excel_file, sheet_name=sheet_name)
-    
-    # Use same logic as CSV
-    return create_users_from_dataframe(df, default_password)
+    default_section = section if section is not None else infer_section_from_filename(excel_file)
+    return create_users_from_dataframe(df, default_password=default_password, default_section=default_section)
 
 
-def create_users_from_dataframe(df, default_password="Cougars2026"):
+def create_users_from_dataframe(df, default_password="Cougars2026", default_section=None):
     """Create users from pandas DataFrame"""
     
     results = {
@@ -145,6 +103,7 @@ def create_users_from_dataframe(df, default_password="Cougars2026"):
     for index, row in df.iterrows():
         email = row['email'].strip()
         condition = int(row['condition'])
+        section = extract_section_from_row(row, default_section)
         
         try:
             # Create user in Firebase Auth
@@ -154,41 +113,57 @@ def create_users_from_dataframe(df, default_password="Cougars2026"):
                 email_verified=False
             )
             
-            print(f"✅ Created: {email} → Condition {condition} (UID: {user.uid})")
+            section_msg = f", Section {section}" if section is not None else ""
+            print(f"✅ Created: {email} → Condition {condition}{section_msg} (UID: {user.uid})")
             
-            # Add to database with condition
+            # Add to database with condition (and section)
             user_ref = db.reference(f'users/{user.uid}')
-            user_ref.set({
+            user_data = {
                 'email': email,
                 'condition': condition,
                 'condition_name': get_condition_name(condition),
                 'assigned_date': pd.Timestamp.now().isoformat(),
                 'sessions': {
                     'arraylist': {'status': 'not_started'},
-                    'recursion': {'status': 'not_started'}
+                    'recursion': {'status': 'not_started'},
+                    'queue': {'status': 'not_started'}
                 }
-            })
+            }
+            if section is not None:
+                user_data['section'] = section
+            user_ref.set(user_data)
             
-            results['created'].append({
+            created_entry = {
                 'email': email,
                 'uid': user.uid,
                 'condition': condition,
                 'password': default_password
-            })
+            }
+            if section is not None:
+                created_entry['section'] = section
+            results['created'].append(created_entry)
             
         except auth.EmailAlreadyExistsError:
-            print(f"⚠️  Already exists: {email} - Updating condition to {condition}")
+            section_msg = f", Section {section}" if section is not None else ""
+            print(f"⚠️  Already exists: {email} - Updating condition to {condition}{section_msg}")
             try:
                 existing_user = auth.get_user_by_email(email)
                 user_ref = db.reference(f'users/{existing_user.uid}')
-                user_ref.update({
+                update_data = {
                     'condition': condition,
                     'condition_name': get_condition_name(condition)
-                })
-                results['already_exist'].append({
+                }
+                if section is not None:
+                    update_data['section'] = section
+                user_ref.update(update_data)
+                
+                exist_entry = {
                     'email': email,
                     'condition': condition
-                })
+                }
+                if section is not None:
+                    exist_entry['section'] = section
+                results['already_exist'].append(exist_entry)
             except Exception as e:
                 print(f"❌ Error updating {email}: {e}")
                 results['failed'].append({'email': email, 'error': str(e)})
@@ -222,7 +197,8 @@ def print_summary(results):
     if results['created']:
         print("\n📋 CREATED USERS:")
         for user in results['created']:
-            print(f"  {user['email']} → Condition {user['condition']} (Password: {user['password']})")
+            section_info = f", Section: {user['section']}" if 'section' in user else ""
+            print(f"  {user['email']} → Condition {user['condition']}{section_info} (Password: {user['password']})")
     
     if results['failed']:
         print("\n❌ FAILED:")
@@ -254,14 +230,30 @@ def count_users_by_condition():
     return counts
 
 
+def count_users_by_section():
+    """Count users by section"""
+    users = db.reference('users').get() or {}
+    admins_emails = ["anissaewilliams@gmail.com", "anissawilliamschs@gmail.com",
+                     "hashemin@cofc.edu", "rashidp@cofc.edu", "tiwaria@cofc.edu"]
+    counts = {}
+
+    for user in users.values():
+        if user.get('email') not in admins_emails:
+            section = user.get('section')
+            if section is not None:
+                counts[section] = counts.get(section, 0) + 1
+
+    return counts
+
+
 
 
 # ============================================================================
 # USAGE EXAMPLES
 # ============================================================================
 
-def create_single_user(email, condition, password="Cougars2026"):
-    """Create a single user with given email and condition"""
+def create_single_user(email, condition, password="Cougars2026", section=None):
+    """Create a single user with given email, condition, and optional section"""
     try:
         # Create in Firebase Auth
         user = auth.create_user(
@@ -272,23 +264,41 @@ def create_single_user(email, condition, password="Cougars2026"):
 
         # Add to database
         user_ref = db.reference(f'users/{user.uid}')
-        user_ref.set({
+        user_data = {
             'email': email,
             'condition': condition,
             'condition_name': get_condition_name(condition),
             'assigned_date': pd.Timestamp.now().isoformat(),
             'sessions': {
                 'arraylist': {'status': 'not_started'},
-                'recursion': {'status': 'not_started'}
+                'recursion': {'status': 'not_started'},
+                'queue': {'status': 'not_started'}
             }
-        })
+        }
+        if section is not None:
+            user_data['section'] = int(section)
+        user_ref.set(user_data)
 
-        print(f"✅ Created: {email} → Condition {condition} (Password: {password})")
+        section_msg = f" → Section {section}" if section is not None else ""
+        print(f"✅ Created: {email} → Condition {condition}{section_msg} (Password: {password})")
         return user.uid
 
     except auth.EmailAlreadyExistsError:
         print(f"⚠️  User already exists: {email}")
-        return None
+        try:
+            existing_user = auth.get_user_by_email(email)
+            user_ref = db.reference(f'users/{existing_user.uid}')
+            update_data = {
+                'condition': condition,
+                'condition_name': get_condition_name(condition)
+            }
+            if section is not None:
+                update_data['section'] = int(section)
+            user_ref.update(update_data)
+            return existing_user.uid
+        except Exception as e:
+            print(f"❌ Error updating {email}: {e}")
+            return None
     except Exception as e:
         print(f"❌ Error: {e}")
         return None
@@ -297,14 +307,41 @@ def create_single_user(email, condition, password="Cougars2026"):
 if __name__ == "__main__":
     init_firebase()
 
-    if len(sys.argv) >= 3:
-        # Usage: python create_firebase_users.py email@example.com 1
+    if len(sys.argv) >= 4:
+        # Usage: python create_firebase_users.py email@example.com 1 2
         email = sys.argv[1]
         condition = int(sys.argv[2])
-        create_single_user(email, condition)
+        section = int(sys.argv[3])
+        create_single_user(email, condition, section=section)
+    elif len(sys.argv) == 3:
+        # Usage: python create_firebase_users.py email@example.com 1
+        # OR: python create_firebase_users.py section2_cleaned.csv 2
+        if sys.argv[1].endswith('.csv') or sys.argv[1].endswith('.xlsx'):
+            file_path = sys.argv[1]
+            section = int(sys.argv[2])
+            if file_path.endswith('.csv'):
+                results = create_users_from_csv(file_path, section=section)
+            else:
+                results = create_users_from_excel(file_path, section=section)
+            print_summary(results)
+        else:
+            email = sys.argv[1]
+            condition = int(sys.argv[2])
+            create_single_user(email, condition)
+    elif len(sys.argv) == 2 and (sys.argv[1].endswith('.csv') or sys.argv[1].endswith('.xlsx')):
+        # Usage: python create_firebase_users.py section2_cleaned.csv
+        file_path = sys.argv[1]
+        if file_path.endswith('.csv'):
+            results = create_users_from_csv(file_path)
+        else:
+            results = create_users_from_excel(file_path)
+        print_summary(results)
     else:
         # Default: show counts
+        print("User condition counts:")
         print(count_users_by_condition())
+        print("User section counts:")
+        print(count_users_by_section())
 
 
 # if __name__ == "__main__":

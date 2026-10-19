@@ -9,7 +9,7 @@ QUIZ_TIME_ESTIMATE = 10 * 60  # ~5 minutes for quiz (no hard limit)
 SURVEY_TIME_ESTIMATE = 5 * 60  # ~3 minutes for survey
 
 # Session Available Dates
-SESSION_1_START = '2026-10-14'
+SESSION_1_START = '2026-10-21'
 SESSION_2_START = '2026-10-28'
 SESSION_3_START = '2026-11-04'
 

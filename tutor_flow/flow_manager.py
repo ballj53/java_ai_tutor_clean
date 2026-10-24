@@ -22,12 +22,73 @@ class TutorFlow:
     Simple state machine - AI handles the nuance within each step.
     """
 
-    def __init__(self, topic_key: str) -> None:
+    STANDARD_STEPS: List[ScaffoldStep] = [
+        ScaffoldStep.INITIAL_METAPHOR,
+        ScaffoldStep.STUDENT_METAPHOR,
+        ScaffoldStep.VISUAL_DIAGRAM,
+        ScaffoldStep.CODE_STRUCTURE,
+        ScaffoldStep.CODE_USAGE,
+        ScaffoldStep.PRACTICE,
+        ScaffoldStep.REFLECTION,
+    ]
+
+    ADAPTIVE_STEPS: List[ScaffoldStep] = [
+        ScaffoldStep.INITIAL_METAPHOR,
+        ScaffoldStep.STUDENT_METAPHOR,
+        ScaffoldStep.VISUAL_DIAGRAM,
+        ScaffoldStep.CODE_STRUCTURE,
+        ScaffoldStep.CODE_USAGE,
+        ScaffoldStep.WORKED_EXAMPLE,
+        ScaffoldStep.GUIDED_PROBLEM,
+        ScaffoldStep.PRACTICE,
+        ScaffoldStep.REFLECTION,
+    ]
+
+    def __init__(self, topic_key: str, is_adaptive: bool = None, user_id: str = None) -> None:
         self.topic_key: str = topic_key
+
+        # Resolve user_id from argument or Streamlit session_state
+        if user_id is None:
+            try:
+                import streamlit as st
+                user_id = getattr(st.session_state, "user_id", None)
+            except Exception:
+                user_id = None
+
+        # -------------------------------------------------------------
+        # ADAPTIVE SELECTION MECHANISM
+        # The engine determines whether this lesson receives 2 extra steps
+        # -------------------------------------------------------------
+        if is_adaptive is None:
+            if user_id:
+                try:
+                    from utils.database import is_adaptive_scaffold_eligible
+                    is_adaptive = is_adaptive_scaffold_eligible(user_id, topic_key)
+                except Exception:
+                    is_adaptive = False
+            else:
+                is_adaptive = False
+
+        self.is_adaptive: bool = bool(is_adaptive)
+        self.lesson_tier: str = "high" if self.is_adaptive else "regular"
+        self.duration_seconds: int = 20 * 60 if self.is_adaptive else 15 * 60
+        self.duration_minutes: int = 20 if self.is_adaptive else 15
+        self.steps: List[ScaffoldStep] = self.ADAPTIVE_STEPS if self.is_adaptive else self.STANDARD_STEPS
         self.current_step: ScaffoldStep = ScaffoldStep.INITIAL_METAPHOR
         self.messages: List[ConversationMessage] = []
         self.step_message_count: int = 0
         self.completed: bool = False
+
+        # -------------------------------------------------------------
+        # ENGINE ACCOUNTABILITY AUDIT
+        # The engine that selects the lesson tier writes it to the database
+        # -------------------------------------------------------------
+        if user_id:
+            try:
+                from utils.database import record_lesson_tier
+                record_lesson_tier(user_id, topic_key, self.lesson_tier)
+            except Exception as e:
+                print(f"[ENGINE AUDIT ERROR] Could not record lesson tier: {e}")
 
     def add_message(self, role: RoleType, content: str) -> None:
         """Append a message tagged with the current scaffold step."""
@@ -185,6 +246,40 @@ class TutorFlow:
             return False
 
         # ============================================================
+        # ADAPTIVE STEP 5a: WORKED_EXAMPLE → GUIDED_PROBLEM
+        # AI walks through worked example, student answers question or says ready
+        # ============================================================
+        if self.current_step == ScaffoldStep.WORKED_EXAMPLE:
+            if self.step_message_count < 1:
+                return False
+            if is_inquiring_or_confused():
+                return self.step_message_count >= 5
+            if self.step_message_count == 1:
+                return gave_substantive_answer()
+            if signals_ready() or gave_substantive_answer():
+                return True
+            if self.step_message_count >= 3:
+                return True
+            return False
+
+        # ============================================================
+        # ADAPTIVE STEP 5b: GUIDED_PROBLEM → PRACTICE
+        # AI shows guided problem/TODOs, student answers/completes blanks
+        # ============================================================
+        if self.current_step == ScaffoldStep.GUIDED_PROBLEM:
+            if self.step_message_count < 1:
+                return False
+            if is_inquiring_or_confused():
+                return self.step_message_count >= 5
+            if self.step_message_count == 1:
+                return gave_substantive_answer()
+            if signals_ready() or gave_substantive_answer():
+                return True
+            if self.step_message_count >= 4:
+                return True
+            return False
+
+        # ============================================================
         # STEP 6: PRACTICE → REFLECTION
         # AI gives problem → student answers → AI validates (asks ready to summarize?) → student responds
         # ============================================================
@@ -232,7 +327,7 @@ class TutorFlow:
 
     def advance_step(self) -> None:
         """Advance to the next scaffold step or mark flow as complete."""
-        steps = list(ScaffoldStep)
+        steps = self.steps
         try:
             idx = steps.index(self.current_step)
         except ValueError:

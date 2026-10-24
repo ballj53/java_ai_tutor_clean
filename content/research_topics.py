@@ -120,6 +120,16 @@ ARRAYLIST_TOPIC = ResearchTopic(
             "STOP. Do NOT answer. Wait for the student.\n"
             "Do NOT re-explain resizing. Student already knows this."
         ),
+        "worked_example": (
+            "Walk through a concrete example of ArrayList resizing.\n"
+            "Ask ONE check question about capacity vs size.\n"
+            "STOP. Wait for the student's answer."
+        ),
+        "guided_problem": (
+            "Present a guided problem with blanks for initializing an ArrayList and adding elements.\n"
+            "Ask the student to fill in the blanks.\n"
+            "STOP. Wait for their response."
+        ),
         "practice": (
             "Ask ONE practice question about when resizing occurs.\n"
             "Example: 'If capacity is 8 and size is 7, what happens when we add 2 elements?'\n"
@@ -212,6 +222,36 @@ RECURSION_TOPIC = ResearchTopic(
             "When the student answers — ANY answer mentioning infinite loop, stack overflow, "
             "or never stopping — accept it immediately and move to the next step.\n"
             "Do NOT repeat this question under any circumstances."
+        ),
+        "worked_example": (
+            "Walk through this concrete worked example of recursion:\n\n"
+            "public static void countDown(int n) {\n"
+            "    if (n <= 0) {  // Base case: Stop sign!\n"
+            "        System.out.println(\"Blastoff!\");\n"
+            "        return;\n"
+            "    }\n"
+            "    System.out.println(n);\n"
+            "    countDown(n - 1);  // Recursive call: moves closer to base case\n"
+            "}\n\n"
+            "Explain the two key pieces:\n"
+            "1. The Base Case (n <= 0) stops the recursion so it doesn't run forever.\n"
+            "2. The Recursive Step calls countDown(n - 1), reducing n each time toward 0.\n\n"
+            "Then ask ONE check question: 'If we call countDown(3), what is the first number printed, and what stops the countdown?'\n"
+            "STOP. Wait for the student's answer."
+        ),
+        "guided_problem": (
+            "Present this guided problem with blanks (TODOs) for recursive sum:\n\n"
+            "public static int sum(int n) {\n"
+            "    if (n == 1) {\n"
+            "        return ____; // TODO 1: Base case return value\n"
+            "    } else {\n"
+            "        return n + ____; // TODO 2: Recursive call with smaller input\n"
+            "    }\n"
+            "}\n\n"
+            "Ask the student: 'Fill in the blanks! What should replace TODO 1 and TODO 2 so that sum(3) calculates 3 + 2 + 1 = 6?'\n"
+            "STOP. Wait for their response.\n"
+            "Expected: TODO 1 is 1, TODO 2 is sum(n - 1).\n"
+            "Accept any close answer, validate it warmly, explain briefly, and prepare for practice."
         ),
         "practice": (
             "Tell the student: 'Here is our factorial function with a base case.'\n"
@@ -332,6 +372,35 @@ QUEUE_TOPIC = ResearchTopic(
             "  tasks.poll(); // task 2 wins — priority 1\n\n"
             "Ask ONE question: 'When would you use a regular Queue vs. a PriorityQueue?'\n"
             "STOP. Do NOT answer. Wait for the student."
+        ),
+        "worked_example": (
+            "TERMINOLOGY: Always use Java method names — offer(), poll(), peek().\n\n"
+            "Walk through this concrete worked example of a regular Queue:\n\n"
+            "Queue<String> printJobs = new LinkedList<>();\n"
+            "printJobs.offer(\"Document_A\");\n"
+            "printJobs.offer(\"Document_B\");\n\n"
+            "System.out.println(printJobs.poll()); // Prints 'Document_A' (FIFO order)\n"
+            "System.out.println(printJobs.peek()); // Peeks at 'Document_B' without removing it\n\n"
+            "Explain briefly:\n"
+            "- offer() adds to the back of the queue.\n"
+            "- poll() removes and returns the front item.\n"
+            "- peek() inspects the front item without removing it.\n\n"
+            "Then ask ONE check question: 'If we call printJobs.poll() right after peek(), which document comes out and how many remain in the queue?'\n"
+            "STOP. Wait for the student's answer."
+        ),
+        "guided_problem": (
+            "TERMINOLOGY: Always use Java method names — offer(), poll(), peek().\n\n"
+            "Present this guided problem for an Emergency Room PriorityQueue:\n\n"
+            "// Severity: 1 = Critical, 5 = Minor (Java min-heap: lowest number = highest priority)\n"
+            "PriorityQueue<Integer> erQueue = new PriorityQueue<>();\n"
+            "erQueue.offer(5); // Minor headache\n"
+            "erQueue.offer(1); // Urgent trauma\n\n"
+            "// TODO: Fill in the blank to get and remove the most urgent patient\n"
+            "int nextPatient = erQueue.____(); // TODO 1: method name\n\n"
+            "Ask the student: 'What method replaces the blank, and will nextPatient be 1 or 5?'\n"
+            "STOP. Wait for their response.\n"
+            "Expected: poll(), returns 1 (because min-heap gives the smallest value first).\n"
+            "Accept any close answer, validate it warmly, explain briefly, and prepare for practice."
         ),
         "practice": (
             "TERMINOLOGY: Always use Java method names — offer(), poll(), peek(). "

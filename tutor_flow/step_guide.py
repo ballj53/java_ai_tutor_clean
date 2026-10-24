@@ -80,6 +80,16 @@ class StepGuide:
             and (m.step == ScaffoldStep.CODE_USAGE or getattr(m.step, "value", m.step) == ScaffoldStep.CODE_USAGE.value)
             for m in (context_messages or [])
         )
+        has_shown_worked_example = any(
+            m.role == "assistant"
+            and (m.step == ScaffoldStep.WORKED_EXAMPLE or getattr(m.step, "value", m.step) == ScaffoldStep.WORKED_EXAMPLE.value)
+            for m in (context_messages or [])
+        )
+        has_shown_guided_problem = any(
+            m.role == "assistant"
+            and (m.step == ScaffoldStep.GUIDED_PROBLEM or getattr(m.step, "value", m.step) == ScaffoldStep.GUIDED_PROBLEM.value)
+            for m in (context_messages or [])
+        )
 
         # ============================================================
         # STEP-SPECIFIC PROMPTS
@@ -160,6 +170,48 @@ class StepGuide:
                     "- If student says ready to practice (after you asked them): Confirm and prepare to move on.\n"
                 )
                 + "Keep under 120 words."
+            )
+
+        if current_step == ScaffoldStep.WORKED_EXAMPLE:
+            return (
+                f"TOPIC: {topic.name}\n\n"
+                f"Student said: \"{user_input}\"\n\n"
+                f"{recent_context}\n"
+                f"TOPIC GUIDANCE:\n{topic_guidance}\n\n"
+                "YOUR TASK:\n"
+                + (
+                    "- Start with an encouraging transition easing the student in (e.g., 'To help you get comfortable with this, let's walk through a concrete example together step-by-step:').\n"
+                    "- Present the WORKED EXAMPLE from TOPIC GUIDANCE clearly with the code and concise explanation.\n"
+                    "- Ask the comprehension check question from TOPIC GUIDANCE.\n"
+                    "- DO NOT invent your own problem or complex tasks. Stick strictly to the TOPIC GUIDANCE above.\n"
+                    if not has_shown_worked_example else
+                    "- DO NOT repeat the entire worked example code.\n"
+                    "- Validate the student's response to your check question (RIGHT/WRONG with a brief explanation).\n"
+                    "- If they understand or answered correctly, ask: 'Ready to try a guided problem where you fill in the missing pieces?'\n"
+                    "- If they asked a question or seem confused, answer in 1-2 friendly sentences and guide them.\n"
+                )
+                + "Keep under 140 words."
+            )
+
+        if current_step == ScaffoldStep.GUIDED_PROBLEM:
+            return (
+                f"TOPIC: {topic.name}\n\n"
+                f"Student said: \"{user_input}\"\n\n"
+                f"{recent_context}\n"
+                f"TOPIC GUIDANCE:\n{topic_guidance}\n\n"
+                "YOUR TASK:\n"
+                + (
+                    "- Start with an encouraging transition (e.g., 'Great! Now let's try a guided problem with a couple blanks for you to fill in:').\n"
+                    "- Present the GUIDED PROBLEM / code with blanks (TODOs) from TOPIC GUIDANCE.\n"
+                    "- Ask the student to identify or fill in what goes in the blanks.\n"
+                    "- DO NOT invent a complicated coding implementation task or ask for full code from scratch. Use ONLY the guided blanks from TOPIC GUIDANCE.\n"
+                    if not has_shown_guided_problem else
+                    "- DO NOT repeat the full problem statement verbatim.\n"
+                    "- Validate the student's solution or attempt explicitly.\n"
+                    "- If correct (or close), explain briefly why it works and ask: 'You've got the hang of this! Ready to tackle a practice problem on your own?'\n"
+                    "- If incorrect, give a friendly hint without giving the full answer away.\n"
+                )
+                + "Keep under 130 words."
             )
 
         if current_step == ScaffoldStep.PRACTICE:

@@ -4,13 +4,22 @@ Core settings for the Java learning research study
 """
 
 # Session Configuration
-SESSION_DURATION = 15 * 60  # 10 minutes for learning
+SESSION_DURATION_REGULAR = 15 * 60  # 15 minutes for regular tier
+SESSION_DURATION_HIGH = 20 * 60     # 20 minutes for high support tier
+SESSION_DURATION = SESSION_DURATION_REGULAR  # Default fallback
+
+
+def get_session_duration(is_high_tier: bool = False) -> int:
+    """Return session duration in seconds (20 mins for high support tier, 15 mins for regular)."""
+    return SESSION_DURATION_HIGH if is_high_tier else SESSION_DURATION_REGULAR
+
+
 QUIZ_TIME_ESTIMATE = 10 * 60  # ~5 minutes for quiz (no hard limit)
 SURVEY_TIME_ESTIMATE = 5 * 60  # ~3 minutes for survey
 
 # Session Available Dates
 SESSION_1_START = '2026-10-21'
-SESSION_2_START = '2026-10-28'
+SESSION_2_START = '2026-10-21'
 SESSION_3_START = '2026-11-04'
 
 

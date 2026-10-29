@@ -164,10 +164,10 @@ class StepGuide:
                     if not has_shown_usage else
                     "- DO NOT show or repeat the usage code again (it has already been shown).\n"
                     "- DO NOT repeat the question verbatim.\n"
-                    "- If student answered your question: Validate their answer, then ask 'Ready to practice with a scenario?'\n"
-                    "- If student just asks to advance or says ready without answering: Remind them warmly: 'Before we jump into practice, give the question a shot! [Prompt question briefly in 1 sentence]. What do you think?'\n"
+                    "- If student answered your question: Validate their answer, then ask 'Ready to keep going?'\n"
+                    "- If student just asks to advance or says ready without answering: Remind them warmly: 'Before we move on, give the question a shot! [Prompt question briefly in 1 sentence]. What do you think?'\n"
                     "- If student asked a question or is confused: Answer their question directly and warmly in 1-2 sentences, then encourage them to answer.\n"
-                    "- If student says ready to practice (after you asked them): Confirm and prepare to move on.\n"
+                    "- If student says ready to move on / keep going (after you asked them): Confirm and prepare to move on.\n"
                 )
                 + "Keep under 120 words."
             )
@@ -187,7 +187,7 @@ class StepGuide:
                     if not has_shown_worked_example else
                     "- DO NOT repeat the entire worked example code.\n"
                     "- Validate the student's response to your check question (RIGHT/WRONG with a brief explanation).\n"
-                    "- If they understand or answered correctly, ask: 'Ready to try a guided problem where you fill in the missing pieces?'\n"
+                    "- If they understand or answered correctly, ask: 'Ready to try a simple guided problem to check your understanding?'\n"
                     "- If they asked a question or seem confused, answer in 1-2 friendly sentences and guide them.\n"
                 )
                 + "Keep under 140 words."
@@ -201,14 +201,15 @@ class StepGuide:
                 f"TOPIC GUIDANCE:\n{topic_guidance}\n\n"
                 "YOUR TASK:\n"
                 + (
-                    "- Start with an encouraging transition (e.g., 'Great! Now let's try a guided problem with a couple blanks for you to fill in:').\n"
-                    "- Present the GUIDED PROBLEM / code with blanks (TODOs) from TOPIC GUIDANCE.\n"
-                    "- Ask the student to identify or fill in what goes in the blanks.\n"
-                    "- DO NOT invent a complicated coding implementation task or ask for full code from scratch. Use ONLY the guided blanks from TOPIC GUIDANCE.\n"
+                    "- Start with an encouraging transition (e.g., 'Great! Now let's try a guided problem together:').\n"
+                    "- Present the GUIDED PROBLEM from TOPIC GUIDANCE clearly with the code and prompt.\n"
+                    "- Ask the guided question from TOPIC GUIDANCE.\n"
+                    "- DO NOT invent a complicated coding implementation task or ask for full code from scratch. Use ONLY the guided problem from TOPIC GUIDANCE.\n"
                     if not has_shown_guided_problem else
                     "- DO NOT repeat the full problem statement verbatim.\n"
                     "- Validate the student's solution or attempt explicitly.\n"
                     "- If correct (or close), explain briefly why it works and ask: 'You've got the hang of this! Ready to tackle a practice problem on your own?'\n"
+                    "- DO NOT invent a new problem, challenge, or ask the student to write code. Only validate their answer and ask if they are ready for the practice problem.\n"
                     "- If incorrect, give a friendly hint without giving the full answer away.\n"
                 )
                 + "Keep under 130 words."

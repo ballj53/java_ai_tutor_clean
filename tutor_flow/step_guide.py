@@ -180,7 +180,7 @@ class StepGuide:
                 f"TOPIC GUIDANCE:\n{topic_guidance}\n\n"
                 "YOUR TASK:\n"
                 + (
-                    "- Start with an encouraging transition easing the student in (e.g., 'To help you get comfortable with this, let's walk through a concrete example together step-by-step:').\n"
+                    "- Start with an encouraging transition easing the student in by acknowledging their answer with one brief sentence and moving to the example (e.g., {Warmly acknowledge their answer here BRIEFLY: one sentence}. 'To help you get comfortable with {SAY TOPIC NAME}, let's walk through a concrete example together step-by-step:').\n"
                     "- Present the WORKED EXAMPLE from TOPIC GUIDANCE clearly with the code and concise explanation.\n"
                     "- Ask the comprehension check question from TOPIC GUIDANCE.\n"
                     "- DO NOT invent your own problem or complex tasks. Stick strictly to the TOPIC GUIDANCE above.\n"
@@ -190,7 +190,7 @@ class StepGuide:
                     "- If they understand or answered correctly, ask: 'Ready to try a simple guided problem to check your understanding?'\n"
                     "- If they asked a question or seem confused, answer in 1-2 friendly sentences and guide them.\n"
                 )
-                + "Keep under 140 words."
+                + "Keep under 150 words."
             )
 
         if current_step == ScaffoldStep.GUIDED_PROBLEM:
@@ -201,7 +201,7 @@ class StepGuide:
                 f"TOPIC GUIDANCE:\n{topic_guidance}\n\n"
                 "YOUR TASK:\n"
                 + (
-                    "- Start with an encouraging transition (e.g., 'Great! Now let's try a guided problem together:').\n"
+                    "- Start with an encouraging transition by acknowledging their answer with one brief sentence (e.g., 'Great! {Warmly acknowledge their answer here BRIEFLY: one sentence}. Now let's try a guided problem together:').\n"
                     "- Present the GUIDED PROBLEM from TOPIC GUIDANCE clearly with the code and prompt.\n"
                     "- Ask the guided question from TOPIC GUIDANCE.\n"
                     "- DO NOT invent a complicated coding implementation task or ask for full code from scratch. Use ONLY the guided problem from TOPIC GUIDANCE.\n"
@@ -212,7 +212,7 @@ class StepGuide:
                     "- DO NOT invent a new problem, challenge, or ask the student to write code. Only validate their answer and ask if they are ready for the practice problem.\n"
                     "- If incorrect, give a friendly hint without giving the full answer away.\n"
                 )
-                + "Keep under 130 words."
+                + "Keep under 140 words."
             )
 
         if current_step == ScaffoldStep.PRACTICE:
@@ -228,7 +228,7 @@ class StepGuide:
                     "YOU MUST NOW INTRODUCE AND PRESENT THE PRACTICE PROBLEM.\n\n"
                     f"TOPIC GUIDANCE:\n{topic_guidance}\n\n"
                     "MANDATORY FORMAT:\n"
-                    "1. Start by briefly acknowledging or validating what the student said, followed by an encouraging transition that explicitly introduces the practice problem "
+                    "1. Start by briefly acknowledging or validating what the student said in the last step, followed by an encouraging transition that explicitly introduces the practice problem "
                     "(e.g., \"Spot on! Now let's put this into practice with a quick scenario:\" or "
                     "\"Great job! You've got the hang of this. Here is a practice problem to test your understanding:\").\n"
                     "2. Present the practice question from TOPIC GUIDANCE above.\n\n"
@@ -296,8 +296,8 @@ class StepGuide:
                 f"TOPIC: {topic.name}\n\n"
                 f"Student answered your practice question: \"{cleaned_input}\"\n\n"
                 "VALIDATE THEIR ANSWER:\n"
-                "1. Say 'Spot on!' or 'Exactly!' (or gently clarify if mistaken).\n"
-                "2. Briefly explain why in 1-2 sentences.\n"
+                "1. If they are correct: Say 'Spot on!' or 'Exactly!' and briefly explain why in 1-2 sentences.\n"
+                "2. If they got it wrong: Say 'Not quite...' and gently explain the correct answer in 1-2 sentences.\n"
                 "3. Say: 'Ready to summarize what you learned?'\n\n"
                 "DO NOT ask any more practice questions or scenarios.\n"
                 "Keep under 75 words."

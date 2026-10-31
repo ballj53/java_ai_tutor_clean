@@ -89,12 +89,12 @@ ARRAYLIST_QUIZ = [
 # Recursion Quiz Questions
 RECURSION_QUIZ = [
     QuizQuestion(
-        question="What is essential for every recursive method?",
+        question="A student is confused because a recursive method keeps calling itself over and over, but it somehow stops and returns a final answer instead of running forever. Conceptually, how is this possible?",
         options=[
-            "A loop",
-            "A base case",
-            "Multiple parameters",
-            "A return type of int"
+            "The Java compiler automatically detects when a method has run too long and forces it to stop.",
+            "The method includes a base case with an if statement that returns a simple, direct answer instead of making another call.",
+            "The method secretly relies on an internal while loop that counts up to 100 calls.",
+            "The operating system pauses the method once computer memory hits 50% capacity."
         ],
         correct_index=1,
         explanation="Every recursive method MUST have a base case to stop the recursion, otherwise it will run forever and cause a stack overflow.",
@@ -102,12 +102,12 @@ RECURSION_QUIZ = [
     ),
 
     QuizQuestion(
-        question="What happens if a recursive method has no base case?",
+        question="You write a recursive method in your code, but you accidentally forget to include a base case ('Stop Sign'). When you run the program, what is the consequence under the hood?",
         options=[
-            "It returns 0",
-            "It runs forever until stack overflow",
-            "It automatically stops after 100 calls",
-            "The compiler prevents it"
+            "The method returns 0 immediately because Java requires a base case to perform calculations.",
+            "It runs forever until it crashes with a stack overflow.",
+            "The compiler detects the missing base case before running and refuses to compile the code.",
+            "The program automatically pauses for 5 seconds and then safely exits without error."
         ],
         correct_index=1,
         explanation="Without a base case, the method keeps calling itself forever until the call stack runs out of memory (stack overflow).",
@@ -115,25 +115,25 @@ RECURSION_QUIZ = [
     ),
 
     QuizQuestion(
-        question="In recursion, where are function calls stored?",
+        question="The AI tutor highlighted that every recursive call is tracked in memory until it completes. While running factorial(3), the method pauses to call factorial(2). Where does the computer hold these waiting, paused calls in memory?",
         options=[
-            "The heap",
-            "The cache",
-            "The call stack",
-            "The hard drive"
+            "On the call stack",
+            "In hard drive storage",
+            "In the heap",
+            "Inside the CPU chip cache"
         ],
-        correct_index=2,
+        correct_index=0,
         explanation="Each recursive call is pushed onto the call stack, which is why too many recursive calls can cause stack overflow.",
         difficulty=3  # Medium-hard - requires memory model knowledge
     ),
 
     QuizQuestion(
-        question="What does factorial(3) return if defined recursively?",
+        question="You execute a recursive method call factorial(3). The base case is factorial(1) = 1, and the recursive step is n * factorial(n - 1). Exactly what happens under the hood to calculate the final answer of 6?",
         options=[
-            "3",
-            "6",
-            "9",
-            "12"
+            "The computer calculates 3 * 2 * 1 instantly on the first call without the method calling itself.",
+            "The computer pauses calls down to the base case factorial (1), and then unwinds backward, multiplying the returned values (2 * 1 = 2, then 3 * 2 = 6).",
+            "The computer adds 3 + 2 + 1 together, and if the total is 6, it converts the addition into multiplication.",
+            "The computer runs a loop backward from 3 to 1 without the method calling itself."
         ],
         correct_index=1,
         explanation="factorial(3) = 3 * 2 * 1 = 6. The recursive calls compute 3 * factorial(2), where factorial(2) = 2 * 1.",
@@ -141,15 +141,15 @@ RECURSION_QUIZ = [
     ),
 
     QuizQuestion(
-        question="What is the base case in fibonacci(n)?",
+        question="You are writing the recursive factorial(int n) method from the lesson: return n * factorial(n - 1). Conceptually, why is the condition if (n <= 1) return 1; required as the base case?",
         options=[
-            "n == 0",
-            "n == 0 or n == 1",
-            "n < 0",
-            "n == 10"
+            "It tells the compiler to convert the recursive method into a standard for loop.",
+            "It acts as the 'Stop Sign' that returns a simple known value, allowing the chain of waiting calls to finally complete.",
+            "It doubles the execution speed by skipping all even numbers.",
+            "It prevents the method from accepting any positive numbers as input."
         ],
         correct_index=1,
-        explanation="Fibonacci has two base cases: fib(0) = 0 and fib(1) = 1. These stop the recursion.",
+        explanation="Our recursive method calculates the factorial of a number using the factorials of smaller numbers, so factorial(1) = 1 acts as our base case 'Stop Sign' that returns the simple value of 1, allowing us to calculate the rest of the factorials.",
         difficulty=3  # Medium-hard - multiple base cases
     ),
 

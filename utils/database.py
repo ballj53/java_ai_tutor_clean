@@ -24,6 +24,27 @@ def save_session_start(user_id: str, session_id: str, condition: int):
         st.error(f"Error saving session start: {e}")
 
 
+def record_lesson_tier(user_id: str, session_id: str, lesson_tier: str):
+    """
+    Record the lesson tier selected by the tutoring engine into the database
+    under that session for accountability and audit tracking.
+    """
+    try:
+        session_normalized = session_id
+        if session_id == 'session_2':
+            session_normalized = 'recursion'
+        elif session_id == 'session_3':
+            session_normalized = 'queue'
+        elif session_id == 'session_1':
+            session_normalized = 'arraylist'
+
+        ref = db.reference(f'users/{user_id}/sessions/{session_normalized}')
+        ref.update({'lesson_tier': lesson_tier})
+        print(f"[ENGINE AUDIT] TutorFlow recorded lesson_tier '{lesson_tier}' for user {user_id} in {session_normalized}")
+    except Exception as e:
+        print(f"Error recording lesson tier: {e}")
+
+
 def save_message(user_id: str, session_id: str, role: str, content: str, 
                  step: Optional[str] = None):
     """Save a conversation message."""
@@ -270,6 +291,40 @@ def get_user_section(user_id: str) -> Optional[int]:
         return None
 
 
+def is_adaptive_scaffold_eligible(user_id: str, session_id: str) -> bool:
+    """
+    Determine if a user should receive adaptive scaffolding (2 extra steps:
+    worked example and guided problem) for the given session.
+
+    Eligibility Rules:
+    - Session 2 (Recursion): Section 2 AND tier == 'high'
+    - Session 3 (Queue): Section 1 AND tier == 'high'
+    - All other sessions and other section/tier combinations: False
+    """
+    session_normalized = session_id
+    if session_id == 'session_2':
+        session_normalized = 'recursion'
+    elif session_id == 'session_3':
+        session_normalized = 'queue'
+    elif session_id == 'session_1':
+        session_normalized = 'arraylist'
+
+    tier = get_user_scaffold_tier(user_id, session_normalized)
+    section = get_user_section(user_id)
+
+    try:
+        section_int = int(section) if section is not None else None
+    except (ValueError, TypeError):
+        section_int = None
+
+    if session_normalized == 'recursion' and section_int == 2 and tier == 'high':
+        return True
+    if session_normalized == 'queue' and section_int == 1 and tier == 'high':
+        return True
+
+    return False
+
+
 def export_data_to_dict() -> List[Dict]:
     """
     Export all data for analysis.
@@ -299,6 +354,7 @@ def export_data_to_dict() -> List[Dict]:
                         'condition_name': condition_name,
                         'section': section,
                         'topic': session_id,
+                        'lesson_tier': session_data.get('lesson_tier', ''),
                         'session_start': session_data.get('start_time', ''),
                         'session_end': session_data.get('end_time', ''),
                         'duration_seconds': session_data.get('duration_seconds', 0),

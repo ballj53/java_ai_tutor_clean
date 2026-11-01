@@ -43,8 +43,12 @@ def render_learning_session():
     # -------------------------
     st.title(f"Learning: {topic.name}")
 
+    flow = getattr(st.session_state, 'flow', None)
+    is_high = getattr(flow, 'is_adaptive', False) or getattr(flow, 'lesson_tier', None) == 'high'
+    session_duration = getattr(flow, 'duration_seconds', None) or (20 * 60 if is_high else SESSION_DURATION)
+
     elapsed = time.time() - st.session_state.start_time
-    remaining = max(0, SESSION_DURATION - elapsed)
+    remaining = max(0, session_duration - elapsed)
     mins = int(remaining // 60)
     secs = int(remaining % 60)
 
@@ -68,22 +72,25 @@ def render_learning_session():
             ScaffoldStep.VISUAL_DIAGRAM: "Visual Diagram",
             ScaffoldStep.CODE_STRUCTURE: "Code Structure",
             ScaffoldStep.CODE_USAGE: "Code Usage",
+            ScaffoldStep.WORKED_EXAMPLE: "Worked Example",
+            ScaffoldStep.GUIDED_PROBLEM: "Guided Problem",
             ScaffoldStep.PRACTICE: "Practice Problem",
             ScaffoldStep.REFLECTION: "Summary & Wrap-up"
         }
 
         try:
             current_step_name = step_names.get(st.session_state.flow.current_step, "Learning")
-            steps_list = list(ScaffoldStep)
+            steps_list = getattr(st.session_state.flow, 'steps', list(ScaffoldStep))
             current_index = steps_list.index(st.session_state.flow.current_step)
-            progress = (current_index + 1) / len(steps_list)
+            total_steps = len(steps_list)
+            progress = (current_index + 1) / total_steps
 
-            st.progress(progress, text=f"**Step {current_index + 1}/7:** {current_step_name}")
-            st.caption("💡 We'll guide you through 7 steps to help you understand this topic deeply.")
+            st.progress(progress, text=f"**Step {current_index + 1}/{total_steps}:** {current_step_name}")
+            st.caption(f"💡 We'll guide you through {total_steps} steps to help you understand this topic deeply.")
         except (ValueError, AttributeError):
             # Session state has stale enum - show generic progress
             st.progress(0.5, text="**Learning in progress...**")
-            st.caption("💡 We'll guide you through 7 steps to help you understand this topic deeply.")
+            st.caption("💡 We'll guide you through the steps to help you understand this topic deeply.")
 
     st.write("---")
     '''
@@ -91,7 +98,7 @@ def render_learning_session():
     # -------------------------
     # Time up → move to quiz
     # -------------------------
-    if elapsed >= SESSION_DURATION:
+    if elapsed >= session_duration:
         st.session_state.phase = "quiz"
         st.rerun()
 

@@ -208,6 +208,6 @@ __marimo__/
 secrets.txt
 
 # Streamlit secrets
-.streamlit/secrets.toml
-scripts/.streamlit/secrets.toml
-secrets.toml
+.streamlit/secrets*
+scripts/.streamlit/secrets*
+secrets*

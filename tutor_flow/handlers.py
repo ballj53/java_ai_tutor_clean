@@ -90,10 +90,11 @@ def handle_user_message_scaffolded(user_input: str):
     # 2. CHECK FOR SESSION END CONDITIONS
     # =========================================================
 
-    # Time-based end
+    # Time-based end (20 mins for high support tier, 15 mins for regular)
     start_time = st.session_state.get('start_time', time.time())
     elapsed_minutes = (time.time() - start_time) / 60
-    if elapsed_minutes >= 15:
+    max_duration_minutes = getattr(flow, 'duration_minutes', 20 if getattr(flow, 'is_adaptive', False) else 15)
+    if elapsed_minutes >= max_duration_minutes:
         _end_session("time", flow, session_id)
         return
 
@@ -274,11 +275,14 @@ def handle_user_message_direct(user_input: str):
     })
     save_message(st.session_state.user_id, session_id, "user", user_input)
 
-    # Check time
+    # Check time (20 mins for high tier, 15 mins for regular)
     start_time = st.session_state.get('start_time', time.time())
     elapsed_minutes = (time.time() - start_time) / 60
+    flow = getattr(st.session_state, 'flow', None)
+    is_high = st.session_state.get('is_high_tier', False) or getattr(flow, 'is_adaptive', False) or (getattr(flow, 'lesson_tier', None) == 'high')
+    max_duration_minutes = 20 if is_high else 15
 
-    if elapsed_minutes >= 15:
+    if elapsed_minutes >= max_duration_minutes:
         if not st.session_state.get('quiz_ready', False):
             final_message = "Time's up! Let's test your knowledge with a quiz."
             st.session_state.messages.append({

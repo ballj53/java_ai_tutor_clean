@@ -18,6 +18,8 @@ class ScaffoldStep(Enum):
     VISUAL_DIAGRAM = "visual_diagram"
     CODE_STRUCTURE = "code_structure"
     CODE_USAGE = "code_usage"
+    WORKED_EXAMPLE = "worked_example"
+    GUIDED_PROBLEM = "guided_problem"
     PRACTICE = "practice"
     REFLECTION = "reflection"
 

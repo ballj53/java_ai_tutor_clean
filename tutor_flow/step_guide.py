@@ -80,6 +80,16 @@ class StepGuide:
             and (m.step == ScaffoldStep.CODE_USAGE or getattr(m.step, "value", m.step) == ScaffoldStep.CODE_USAGE.value)
             for m in (context_messages or [])
         )
+        has_shown_worked_example = any(
+            m.role == "assistant"
+            and (m.step == ScaffoldStep.WORKED_EXAMPLE or getattr(m.step, "value", m.step) == ScaffoldStep.WORKED_EXAMPLE.value)
+            for m in (context_messages or [])
+        )
+        has_shown_guided_problem = any(
+            m.role == "assistant"
+            and (m.step == ScaffoldStep.GUIDED_PROBLEM or getattr(m.step, "value", m.step) == ScaffoldStep.GUIDED_PROBLEM.value)
+            for m in (context_messages or [])
+        )
 
         # ============================================================
         # STEP-SPECIFIC PROMPTS
@@ -154,12 +164,55 @@ class StepGuide:
                     if not has_shown_usage else
                     "- DO NOT show or repeat the usage code again (it has already been shown).\n"
                     "- DO NOT repeat the question verbatim.\n"
-                    "- If student answered your question: Validate their answer, then ask 'Ready to practice with a scenario?'\n"
-                    "- If student just asks to advance or says ready without answering: Remind them warmly: 'Before we jump into practice, give the question a shot! [Prompt question briefly in 1 sentence]. What do you think?'\n"
+                    "- If student answered your question: Validate their answer, then ask 'Ready to keep going?'\n"
+                    "- If student just asks to advance or says ready without answering: Remind them warmly: 'Before we move on, give the question a shot! [Prompt question briefly in 1 sentence]. What do you think?'\n"
                     "- If student asked a question or is confused: Answer their question directly and warmly in 1-2 sentences, then encourage them to answer.\n"
-                    "- If student says ready to practice (after you asked them): Confirm and prepare to move on.\n"
+                    "- If student says ready to move on / keep going (after you asked them): Confirm and prepare to move on.\n"
                 )
                 + "Keep under 120 words."
+            )
+
+        if current_step == ScaffoldStep.WORKED_EXAMPLE:
+            return (
+                f"TOPIC: {topic.name}\n\n"
+                f"Student said: \"{user_input}\"\n\n"
+                f"{recent_context}\n"
+                f"TOPIC GUIDANCE:\n{topic_guidance}\n\n"
+                "YOUR TASK:\n"
+                + (
+                    "- Start with an encouraging transition easing the student in by acknowledging their answer with one brief sentence and moving to the example (e.g., {Warmly acknowledge their answer here BRIEFLY: one sentence}. 'To help you get comfortable with {SAY TOPIC NAME}, let's walk through a concrete example together step-by-step:').\n"
+                    "- Present the WORKED EXAMPLE from TOPIC GUIDANCE clearly with the code and concise explanation.\n"
+                    "- Ask the comprehension check question from TOPIC GUIDANCE.\n"
+                    "- DO NOT invent your own problem or complex tasks. Stick strictly to the TOPIC GUIDANCE above.\n"
+                    if not has_shown_worked_example else
+                    "- DO NOT repeat the entire worked example code.\n"
+                    "- Validate the student's response to your check question (RIGHT/WRONG with a brief explanation).\n"
+                    "- If they understand or answered correctly, ask: 'Ready to try a simple guided problem to check your understanding?'\n"
+                    "- If they asked a question or seem confused, answer in 1-2 friendly sentences and guide them.\n"
+                )
+                + "Keep under 150 words."
+            )
+
+        if current_step == ScaffoldStep.GUIDED_PROBLEM:
+            return (
+                f"TOPIC: {topic.name}\n\n"
+                f"Student said: \"{user_input}\"\n\n"
+                f"{recent_context}\n"
+                f"TOPIC GUIDANCE:\n{topic_guidance}\n\n"
+                "YOUR TASK:\n"
+                + (
+                    "- Start with an encouraging transition by acknowledging their answer with one brief sentence (e.g., 'Great! {Warmly acknowledge their answer here BRIEFLY: one sentence}. Now let's try a guided problem together:').\n"
+                    "- Present the GUIDED PROBLEM from TOPIC GUIDANCE clearly with the code and prompt.\n"
+                    "- Ask the guided question from TOPIC GUIDANCE.\n"
+                    "- DO NOT invent a complicated coding implementation task or ask for full code from scratch. Use ONLY the guided problem from TOPIC GUIDANCE.\n"
+                    if not has_shown_guided_problem else
+                    "- DO NOT repeat the full problem statement verbatim.\n"
+                    "- Validate the student's solution or attempt explicitly.\n"
+                    "- If correct (or close), explain briefly why it works and ask: 'You've got the hang of this! Ready to tackle a practice problem on your own?'\n"
+                    "- DO NOT invent a new problem, challenge, or ask the student to write code. Only validate their answer and ask if they are ready for the practice problem.\n"
+                    "- If incorrect, give a friendly hint without giving the full answer away.\n"
+                )
+                + "Keep under 140 words."
             )
 
         if current_step == ScaffoldStep.PRACTICE:
@@ -175,7 +228,7 @@ class StepGuide:
                     "YOU MUST NOW INTRODUCE AND PRESENT THE PRACTICE PROBLEM.\n\n"
                     f"TOPIC GUIDANCE:\n{topic_guidance}\n\n"
                     "MANDATORY FORMAT:\n"
-                    "1. Start by briefly acknowledging or validating what the student said, followed by an encouraging transition that explicitly introduces the practice problem "
+                    "1. Start by briefly acknowledging or validating what the student said in the last step, followed by an encouraging transition that explicitly introduces the practice problem "
                     "(e.g., \"Spot on! Now let's put this into practice with a quick scenario:\" or "
                     "\"Great job! You've got the hang of this. Here is a practice problem to test your understanding:\").\n"
                     "2. Present the practice question from TOPIC GUIDANCE above.\n\n"
@@ -243,8 +296,8 @@ class StepGuide:
                 f"TOPIC: {topic.name}\n\n"
                 f"Student answered your practice question: \"{cleaned_input}\"\n\n"
                 "VALIDATE THEIR ANSWER:\n"
-                "1. Say 'Spot on!' or 'Exactly!' (or gently clarify if mistaken).\n"
-                "2. Briefly explain why in 1-2 sentences.\n"
+                "1. If they are correct: Say 'Spot on!' or 'Exactly!' and briefly explain why in 1-2 sentences.\n"
+                "2. If they got it wrong: Say 'Not quite...' and gently explain the correct answer in 1-2 sentences.\n"
                 "3. Say: 'Ready to summarize what you learned?'\n\n"
                 "DO NOT ask any more practice questions or scenarios.\n"
                 "Keep under 75 words."

@@ -298,7 +298,7 @@ def is_adaptive_scaffold_eligible(user_id: str, session_id: str) -> bool:
 
     Eligibility Rules:
     - Session 2 (Recursion): Section 2 AND tier == 'high'
-    - Session 3 (Queue): Section 1 AND tier == 'high'
+    - Session 3 (Queue): ALL students receive a 9-step lesson
     - All other sessions and other section/tier combinations: False
     """
     session_normalized = session_id
@@ -309,6 +309,10 @@ def is_adaptive_scaffold_eligible(user_id: str, session_id: str) -> bool:
     elif session_id == 'session_1':
         session_normalized = 'arraylist'
 
+    # Session 3 (Queue): All students receive 9-step adaptive lesson
+    if session_normalized == 'queue':
+        return True
+
     tier = get_user_scaffold_tier(user_id, session_normalized)
     section = get_user_section(user_id)
 
@@ -318,8 +322,6 @@ def is_adaptive_scaffold_eligible(user_id: str, session_id: str) -> bool:
         section_int = None
 
     if session_normalized == 'recursion' and section_int == 2 and tier == 'high':
-        return True
-    if session_normalized == 'queue' and section_int == 1 and tier == 'high':
         return True
 
     return False

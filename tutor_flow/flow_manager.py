@@ -60,7 +60,10 @@ class TutorFlow:
         # The engine determines whether this lesson receives 2 extra steps
         # -------------------------------------------------------------
         if is_adaptive is None:
-            if user_id:
+            if topic_key in ['queue', 'session_3']:
+                # Session 3 (Queue): ALL students receive a 9-step lesson
+                is_adaptive = True
+            elif user_id:
                 try:
                     from utils.database import is_adaptive_scaffold_eligible
                     is_adaptive = is_adaptive_scaffold_eligible(user_id, topic_key)

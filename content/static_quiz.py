@@ -184,7 +184,7 @@ RECURSION_QUIZ = [
 # Queue & Priority Queue Quiz Questions
 QUEUE_QUIZ = [
     QuizQuestion(
-        question="What is the primary acronym used to describe Queue behavior?",
+        question="A print server in a computer lab receives print requests from multiple students throughout the day. The server routes these jobs through a standard Java Queue so that documents are printed fairly without anyone cutting in line. What core behavioral rule governs how this Queue releases its items?",
         options=[
             "LIFO (Last-In, First-Out)",
             "FIFO (First-In, First-Out)",
@@ -197,20 +197,20 @@ QUEUE_QUIZ = [
     ),
 
     QuizQuestion(
-        question="In a Priority Queue, which element is always the first to be removed?",
+        question="The AI tutor used the analogy of an Emergency Room triage desk to introduce a Priority Queue: arrival time is ignored when an urgent emergency arrives. Unlike a regular Queue, when a program removes an item from a PriorityQueue, how does it decide which item exits first?",
         options=[
-            "The element that was added first",
-            "The element that was added last",
-            "The element with the highest priority (lowest value by default)",
-            "A randomly selected element"
+            "It strictly serves the item that arrived earliest and has waited the longest.",
+            "It removes whichever item has the highest priority",
+            "It always removes the item added most recently to save memory space.",
+            "It randomly picks an item so every element has an equal chance of being served."
         ],
-        correct_index=2,
+        correct_index=1,
         explanation="A PriorityQueue always removes the highest-priority element first. By default in Java, this means the smallest numeric value (min-heap).",
         difficulty=1  # Easy - core distinction
     ),
 
     QuizQuestion(
-        question="Unlike an ArrayList, which operation is strictly forbidden in a standard Queue?",
+        question="A developer is refactoring code and replaces an ArrayList with a standard Java Queue. While doing so, they find that a method call they previously relied on now produces a compiler error. Unlike an ArrayList, which of the below operations is strictly forbidden in a standard Queue?",
         options=[
             "Adding an element to the back",
             "Removing the front element",
@@ -223,20 +223,20 @@ QUEUE_QUIZ = [
     ),
 
     QuizQuestion(
-        question="Where does offer() place a new element in a Queue?",
+        question="You have a standard Queue holding customer requests, and you execute queue.offer('New Request'). Exactly what happens to this item under the hood?",
         options=[
-            "At the front of the Queue",
-            "At a random position",
-            "At the back (rear) of the Queue",
-            "In sorted order"
+            "It jumps directly to the front (head) to be processed next.",
+            "It is placed at the back (tail), waiting behind all existing requests. ",
+            "It is assigned to a random vacant memory slot inside the queue buffer.",
+            "The Queue sorts all strings alphabetically and shifts elements to fit it in place."
         ],
-        correct_index=2,
+        correct_index=1,
         explanation="offer() always adds to the back of the Queue. Elements exit from the front — that's what makes it FIFO (First-In, First-Out).",
         difficulty=2  # Medium - structural understanding
     ),
 
     QuizQuestion(
-        question="If you insert 50, 10, and 30 into a Java PriorityQueue (default ordering) and call poll(), which value is returned?",
+        question="You create a default Java PriorityQueue and add three integers in this exact order: pq.offer(50), pq.offer(10), and pq.offer(30). When you execute pq.poll() after the values are added, what happens under the hood and which value is returned?",
         options=[
             "50 — it was inserted first",
             "30 — it is the middle value",
